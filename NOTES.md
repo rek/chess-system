@@ -47,14 +47,15 @@ Board is the Nano with the OLD bootloader, so the FQBN is `arduino:avr:nano:cpu=
 
 ## Clock behaviour (chess_clock.ino)
 - READY: Right (D2) / Left (D4) step up / down through presets 3+2 (default), 5+3, 10+5, wrapping round; the display shows the preset's starting time
-  (3.00, 5.00 or 10.0). A player button starts the OPPONENT's clock. Start begins
-  Player 1's clock.
+  (3.00, 5.00 or 10.0). A player button starts the OPPONENT's clock. Start begins the
+  clock of the player whose seesaw side is up (Player 1 if it reads level). A side already
+  down at power-on is not treated as a press.
 - RUNNING: your own button ends your turn, adds increment, starts the opponent's clock.
   Start pauses. Left/Right also pause.
 - PAUSED: both times blink.
   - Left/Right short press: +1 min to that side's player. Long press (0.7 s): -1 min, to undo a mistake.
   - Player button: ends that player's turn with no increment (rock the seesaw back to hand the turn back).
-  - Start resumes whoever is on move.
+  - Start resumes the player whose seesaw side is up.
   - Illegal move: offender presses their side, someone pauses, +1 min on the side that gets it,
     rock the seesaw back to the offender, Start resumes the offender's clock.
 - FLAGGED: the player at zero blinks `00.0`.

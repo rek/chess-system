@@ -6,7 +6,8 @@
 //
 // READY   : Left/Right step the presets 3+2, 5+3, 10+5 (Left = down, Right = up, wrapping
 //           round; the display shows that preset's starting time). A player button starts
-//           the OPPONENT's clock (you just moved). Start begins Player 1's clock.
+//           the OPPONENT's clock (you just moved). Start begins the clock of the player
+//           whose seesaw side is UP (Player 1 if the seesaw reads level).
 // RUNNING : Pressing your own button ends your turn, adds increment, starts opponent's clock.
 //           Start pauses. Left/Right also pause (safety).
 // PAUSED  : both times blink.
@@ -14,7 +15,7 @@
 //           Left/Right long press:  -1 min to that side's player (undo a mistake).
 //           Player button: ends that player's turn, no increment (so rocking the seesaw back
 //           hands the turn back, e.g. after an illegal move).
-//           Start resumes whoever is on move.
+//           Start resumes the player whose seesaw side is up.
 // FLAGGED : someone hit zero; their time blinks 00.0.
 // Hold Start for 1.5 s at any time to reset.
 //
@@ -104,6 +105,9 @@ struct Button {
   uint32_t changedAt = 0, pressedAt = 0;
   bool pressed = false, released = false;
   Button(uint8_t p) : pin(p) {}
+  // Take the pin's current level as the starting state, so a switch that is already held
+  // down at power-on (the seesaw always has one side down) doesn't count as a fresh press.
+  void begin() { stable = lastRead = digitalRead(pin); }
   void update(uint32_t now) {
     bool r = digitalRead(pin);
     pressed = released = false;
@@ -144,6 +148,15 @@ void addMinute(uint8_t side) {
 
 void subMinute(uint8_t side) {
   if (remaining[side] > ADJ_MS) remaining[side] -= ADJ_MS;   // under a minute: leave it
+}
+
+// Whose clock should run, judged from the seesaw: the side that is down has just moved,
+// so the OTHER player is on move. If neither or both read as down, keep `fallback`.
+uint8_t seesawActive(uint8_t fallback) {
+  bool d1 = bP1.down(), d2 = bP2.down();
+  if (d1 && !d2) return 1;
+  if (d2 && !d1) return 0;
+  return fallback;
 }
 
 // ---------- Display ----------
@@ -189,6 +202,8 @@ void setup() {
   pinMode(PIN_P1, INPUT_PULLUP); pinMode(PIN_P2, INPUT_PULLUP);
   pinMode(PIN_START, INPUT_PULLUP);
   pinMode(PIN_BTN_LEFT, INPUT_PULLUP); pinMode(PIN_BTN_RIGHT, INPUT_PULLUP);
+  delay(5);                                   // let the pull-ups settle before reading
+  bP1.begin(); bP2.begin(); bStart.begin(); bLeft.begin(); bRight.begin();
   SPI.begin();
   SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE0));
   send(0x0F, 0x00); send(0x0C, 0x01); send(0x0B, 0x07);   // scan all 8 digits
@@ -230,9 +245,9 @@ void loop() {
     resetClock(); resetFired = true;
   }
   if (bStart.released && !resetFired) {
-    if (state == READY) { active = 0; state = RUNNING; }
+    if (state == READY) { active = seesawActive(0); state = RUNNING; }
     else if (state == RUNNING) state = PAUSED;
-    else if (state == PAUSED) state = RUNNING;
+    else if (state == PAUSED) { active = seesawActive(active); state = RUNNING; }
   }
 
   // Left / Right buttons (bottom). Left belongs to Player 1, Right to Player 2.
