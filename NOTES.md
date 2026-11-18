@@ -32,11 +32,11 @@ Board is the Nano with the OLD bootloader, so the FQBN is `arduino:avr:nano:cpu=
 | Display DIN | D11 (MOSI) |
 | Display LOAD | D10 |
 | Display CLK | D13 (SCK) |
-| Mode up button (front) | D2 to GND |
-| Start/Pause button (front) | D3 to GND |
-| Mode down button (front) | D4 to GND |
-| Player 2 button | D5 to GND |
-| Player 1 button | D6 to GND |
+| Right button (bottom) | D2 to GND |
+| Start/Pause button (bottom, middle) | D3 to GND |
+| Left button (bottom) | D4 to GND |
+| Player 1 button (top seesaw, left) | D5 to GND |
+| Player 2 button (top seesaw, right) | D6 to GND |
 
 - Buttons need no resistors (internal pull-ups).
 - Display: the two 5-pin rows are wired together except DIN/DOUT. Power, LOAD and CLK can come
@@ -46,12 +46,17 @@ Board is the Nano with the OLD bootloader, so the FQBN is `arduino:avr:nano:cpu=
 - Upside down, the decimal points sit at the top of the digits, which is why it was remounted.
 
 ## Clock behaviour (chess_clock.ino)
-- READY: Mode up (D2) / Mode down (D4) step through presets 3+2 (default), 5+3, 10+5, wrapping round; the display shows the preset's starting time
+- READY: Right (D2) / Left (D4) step up / down through presets 3+2 (default), 5+3, 10+5, wrapping round; the display shows the preset's starting time
   (3.00, 5.00 or 10.0). A player button starts the OPPONENT's clock. Start begins
   Player 1's clock.
 - RUNNING: your own button ends your turn, adds increment, starts the opponent's clock.
-  Start pauses.
-- PAUSED: both times blink. Start resumes.
+  Start pauses. Left/Right also pause.
+- PAUSED: both times blink.
+  - Left/Right short press: +1 min to that side's player. Long press (0.7 s): -1 min, to undo a mistake.
+  - Player button: ends that player's turn with no increment (rock the seesaw back to hand the turn back).
+  - Start resumes whoever is on move.
+  - Illegal move: offender presses their side, someone pauses, +1 min on the side that gets it,
+    rock the seesaw back to the offender, Start resumes the offender's clock.
 - FLAGGED: the player at zero blinks `00.0`.
 - Hold Start 1.5 s anytime to reset.
 - Display: Player 1 on the left 3 digits, Player 2 on the right 3, the two middle digits blank.

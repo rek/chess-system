@@ -2,18 +2,25 @@
 //
 // Buttons (each wired between the pin and GND, no resistor needed):
 //   Bottom: D4 = Left   D3 = Start/Pause   D2 = Right
-//   Top:    D5 = Player 2   D6 = Player 1   (pins swapped to fix the mirrored clock)
+//   Top:    D5 = Player 1   D6 = Player 2   (seesaw: pressing your side ends your turn)
 //
-// READY   : Left/Right step the presets (Left = down, Right = up, wrapping round).
-//           A player button starts the OPPONENT's clock. Start begins Player 1's clock.
-// RUNNING : Your own player button ends your turn, adds increment, starts opponent's clock.
+// READY   : Left/Right step the presets 3+2, 5+3, 10+5 (Left = down, Right = up, wrapping
+//           round; the display shows that preset's starting time). A player button starts
+//           the OPPONENT's clock (you just moved). Start begins Player 1's clock.
+// RUNNING : Pressing your own button ends your turn, adds increment, starts opponent's clock.
 //           Start pauses. Left/Right also pause (safety).
 // PAUSED  : both times blink.
-//           1) press a player button on top (sets who resumes: the opponent of that button)
-//           2) Left adds 1 min to the left player, Right adds 1 min to the right player
-//           3) Start resumes
+//           Left/Right short press: +1 min to that side's player.
+//           Left/Right long press:  -1 min to that side's player (undo a mistake).
+//           Player button: ends that player's turn, no increment (so rocking the seesaw back
+//           hands the turn back, e.g. after an illegal move).
+//           Start resumes whoever is on move.
 // FLAGGED : someone hit zero; their time blinks 00.0.
 // Hold Start for 1.5 s at any time to reset.
+//
+// Display: Player 1 on the left 3 digits, Player 2 on the right 3 digits, the two middle
+// digits always blank. Format "MM.S" (10 min+, S = tens of seconds), "M.SS" (under 10 min),
+// "SS.t" (under 1 min). Power-on preset is 3 + 2.
 #include <SPI.h>
 
 const uint8_t LOAD_PIN = 10;
@@ -29,9 +36,9 @@ const uint8_t PIN_P1 = 5, PIN_P2 = 6;
 const uint16_t DEBOUNCE_MS = 25;
 const uint16_t RESET_HOLD_MS = 1500;
 
-const uint32_t ADD_MS = 60000UL;                 // time added per press while paused
+const uint16_t LONG_PRESS_MS = 700;              // Left/Right held this long = -1 min
+const uint32_t ADJ_MS = 60000UL;                 // time added/removed per press while paused
 const uint32_t MAX_MS = 99UL * 60000UL;          // display holds at most 99 minutes
-const bool REQUIRE_PLAYER_FIRST = true;          // must press a player button before adding time
 
 struct Preset { uint32_t timeMs; uint32_t incMs; };
 const Preset PRESETS[] = {
@@ -48,9 +55,11 @@ void send(uint8_t reg, uint8_t val) {
   SPI.transfer(val);
   digitalWrite(LOAD_PIN, HIGH);
 }
+// No-decode mode: we draw segments ourselves so the digits can be turned upside down.
+// Bits: DP A B C D E F G = 0x80 ... 0x01. Values 0-9 are digits, 0x0A is '-', 0x0F is blank.
 const uint8_t FONT[16] = {0x7E, 0x30, 0x6D, 0x79, 0x33, 0x5B, 0x5F, 0x70, 0x7F, 0x7B,
                           0x01, 0, 0, 0, 0, 0x00};
-uint8_t rot180(uint8_t s) {
+uint8_t rot180(uint8_t s) {                       // swap A<->D, B<->E, C<->F; G stays
   uint8_t r = s & 0x01;
   if (s & 0x40) r |= 0x08;
   if (s & 0x08) r |= 0x40;
@@ -60,24 +69,29 @@ uint8_t rot180(uint8_t s) {
   if (s & 0x02) r |= 0x10;
   return r;
 }
+// The frame is built in VISUAL positions, 0 = leftmost digit as you look at the clock.
+// The 8 digits are split 3 + 1 + 1 + 3: Player 1 uses 0-2, Player 2 uses 5-7,
+// and the inner digit on each side (3 and 4) is always blank.
 const uint8_t NUM_DIGITS = 8;
 const uint8_t SIDE_START[2] = {0, 5};
-uint8_t frameVal[NUM_DIGITS];
-bool sepAfter[NUM_DIGITS];
+uint8_t frameVal[NUM_DIGITS];   // FONT index per digit
+bool sepAfter[NUM_DIGITS];      // separator dot between digit i and digit i+1
 
 void clearFrame() {
   for (uint8_t i = 0; i < NUM_DIGITS; i++) { frameVal[i] = 0x0F; sepAfter[i] = false; }
 }
 void flushFrame() {
+  // On this module, register 1 is the rightmost digit when upright, so it is the leftmost
+  // digit when the module is mounted upside down.
   bool leftIsReg1 = (UPSIDE_DOWN != REVERSED);
   for (uint8_t v = 0; v < NUM_DIGITS; v++) {
     uint8_t seg = FONT[frameVal[v] & 0x0F];
     bool dot;
     if (UPSIDE_DOWN) {
       seg = rot180(seg);
-      dot = (v > 0) && sepAfter[v - 1];
-    } else {
-      dot = sepAfter[v];
+      dot = (v > 0) && sepAfter[v - 1];   // dot is now top-left of a digit, so it shows
+    } else {                              // the gap BEFORE that digit
+      dot = sepAfter[v];                  // dot is bottom-right: the gap AFTER the digit
     }
     send(leftIsReg1 ? (v + 1) : (NUM_DIGITS - v), seg | (dot ? 0x80 : 0));
   }
@@ -112,7 +126,8 @@ uint32_t incMs;
 uint8_t active = 0;            // whose clock is (or was last) running
 uint32_t lastTick = 0;
 bool resetFired = false;
-bool turnSet = false;          // in PAUSED: a player button has been pressed
+bool sideArmed[2] = {false, false};   // Left/Right press began while PAUSED
+bool sideLongFired[2] = {false, false};
 
 void resetClock() {
   remaining[0] = remaining[1] = PRESETS[presetIdx].timeMs;
@@ -121,23 +136,27 @@ void resetClock() {
   state = READY;
 }
 
-void pauseClock() {
-  state = PAUSED;
-  turnSet = false;             // must press a player button before adding time
-}
-
 void addMinute(uint8_t side) {
-  uint32_t t = remaining[side] + ADD_MS;
+  if (remaining[side] >= MAX_MS) return;         // never let "add" take time away
+  uint32_t t = remaining[side] + ADJ_MS;
   remaining[side] = (t > MAX_MS) ? MAX_MS : t;
 }
 
+void subMinute(uint8_t side) {
+  if (remaining[side] > ADJ_MS) remaining[side] -= ADJ_MS;   // under a minute: leave it
+}
+
 // ---------- Display ----------
+// Draws one player's time in their 3 digits:
+//   10 minutes or more : "MM.S" (S = tens of seconds)
+//   1 to 10 minutes    : "M.SS"
+//   under 1 minute     : "SS.t" (tenths)
 void drawTime(uint8_t side, uint32_t ms) {
   uint8_t b = SIDE_START[side];
   if (ms >= 60000UL) {
-    uint16_t secs = (ms + 999) / 1000;
+    uint16_t secs = (ms + 999) / 1000;           // round up so 5:00 shows for a full second
     uint8_t mm = secs / 60, ss = secs % 60;
-    if (mm >= 10) {
+    if (mm >= 10) {                              // "MM.S": S is tens of seconds, so 14:37 = 14.3
       frameVal[b] = mm / 10; frameVal[b + 1] = mm % 10; sepAfter[b + 1] = true;
       frameVal[b + 2] = ss / 10;
     } else {
@@ -156,6 +175,7 @@ void updateDisplay(uint32_t now) {
   bool blinkOff = (state == PAUSED && (now / 500) % 2) ||
                   (state == FLAGGED && (now / 250) % 2);
   for (uint8_t side = 0; side < 2; side++) {
+    // Paused: both sides blink. Flagged: only the player who ran out blinks.
     bool hide = blinkOff && (state == PAUSED || side == active);
     if (!hide) drawTime(side, remaining[side]);
   }
@@ -171,8 +191,8 @@ void setup() {
   pinMode(PIN_BTN_LEFT, INPUT_PULLUP); pinMode(PIN_BTN_RIGHT, INPUT_PULLUP);
   SPI.begin();
   SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE0));
-  send(0x0F, 0x00); send(0x0C, 0x01); send(0x0B, 0x07);
-  send(0x09, 0x00); send(0x0A, BRIGHTNESS);
+  send(0x0F, 0x00); send(0x0C, 0x01); send(0x0B, 0x07);   // scan all 8 digits
+  send(0x09, 0x00); send(0x0A, BRIGHTNESS);   // no-decode mode (see FONT)
   resetClock();
   lastTick = millis();
 }
@@ -199,9 +219,8 @@ void loop() {
       remaining[p] += incMs;
       active = 1 - p;
     }
-    else if (state == PAUSED) {          // no time change, just choose who resumes
+    else if (state == PAUSED) {          // seesaw rocked: hand the turn over, no increment
       active = 1 - p;
-      turnSet = true;
     }
   }
 
@@ -212,23 +231,32 @@ void loop() {
   }
   if (bStart.released && !resetFired) {
     if (state == READY) { active = 0; state = RUNNING; }
-    else if (state == RUNNING) pauseClock();
+    else if (state == RUNNING) state = PAUSED;
     else if (state == PAUSED) state = RUNNING;
   }
 
-  // Left / Right buttons (bottom).
-  if (bLeft.pressed || bRight.pressed) {
-    if (state == RUNNING) {
-      pauseClock();                                    // safety: any bottom button pauses
-    } else if (state == PAUSED) {
-      if (!REQUIRE_PLAYER_FIRST || turnSet) {
-        addMinute(bLeft.pressed ? 0 : 1);              // left button -> left player
+  // Left / Right buttons (bottom). Left belongs to Player 1, Right to Player 2.
+  for (uint8_t side = 0; side < 2; side++) {
+    Button &b = (side == 0) ? bLeft : bRight;
+    if (b.pressed) {
+      // Only a press that STARTS while paused adjusts time, so the press that pauses a
+      // running clock doesn't also add a minute when it is released.
+      sideArmed[side] = (state == PAUSED);
+      sideLongFired[side] = false;
+      if (state == RUNNING) state = PAUSED;            // safety: any bottom button pauses
+      else if (state == READY) {
+        if (side == 1) presetIdx = (presetIdx + 1) % NUM_PRESETS;
+        else presetIdx = (presetIdx + NUM_PRESETS - 1) % NUM_PRESETS;
+        resetClock();
       }
-    } else if (state == READY) {
-      if (bRight.pressed) presetIdx = (presetIdx + 1) % NUM_PRESETS;
-      else presetIdx = (presetIdx + NUM_PRESETS - 1) % NUM_PRESETS;
-      resetClock();
     }
+    if (sideArmed[side] && state == PAUSED) {
+      if (b.down() && !sideLongFired[side] && now - b.pressedAt >= LONG_PRESS_MS) {
+        subMinute(side); sideLongFired[side] = true;   // long press: -1 min
+      }
+      if (b.released && !sideLongFired[side]) addMinute(side);   // short press: +1 min
+    }
+    if (b.released) sideArmed[side] = false;
   }
 
   static uint32_t lastDraw = 0;
