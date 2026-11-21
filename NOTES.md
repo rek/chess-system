@@ -67,21 +67,30 @@ Board is the Nano with the OLD bootloader, so the FQBN is `arduino:avr:nano:cpu=
   are resent every second so a voltage dip that knocks it into test mode (all 888) recovers.
   `BRIGHTNESS = 1` (was 4) to keep current low on battery.
 
-## Battery plan (not built yet)
-- Parts: Seeed LiPo Rider Plus (charger + 5V boost, USB-C charging, on/off switch) and a 600 mAh LiPo.
-  Replaces the earlier TP4056 + boost idea (the TP4056 only charges; a single cell is 3.0-4.2V,
-  too low for the ATmega328P at 16 MHz and the MAX7219, which want about 4.5-5V).
-- Wiring: LiPo -> Rider battery connector. Rider 5V out -> Nano 5V pin. Rider GND -> Nano GND.
-  Use the Rider's switch as the clock's power switch.
-- Runtime estimate: about 6-10 h (roughly 80 mA from the cell). Unmeasured.
+## Battery plan (not built yet, updated 2026-11-21)
+Schematics: `power/power_simple.kicad_sch` (chosen) and `power/power.kicad_sch` (alternative),
+with PDFs. Kept local, not in git.
+- Parts: 1200 mAh LiPo, TP4056 module (HW-373: 4056E charger + DW01/8205A protection, has
+  OUT+/OUT-), Seeed Lipo Rider Plus (board rev v1.1, ETA9740 chip), 1N5817 Schottky diode.
+- Why the TP4056 stays: the Rider Plus charges at up to 2A (Seeed; the ETA9740 can do 3A, exact
+  setting unknown), too fast for small cells. The TP4056 at its stock 1A suits 1200 mAh, so no
+  resistor swap. Measure R3 first: about 1.2k = 1A. A cell under 1000 mAh would need R3 = 4.7k.
+  The Rider also has no cell protection of its own; the TP4056 module provides it.
+- Wiring: cell -> TP4056 B+/B-. TP4056 OUT+/OUT- -> Rider JST (marked: - top, + bottom).
+  Rider header 5V (pin 5) -> D1 (stripe to Nano) -> Nano 5V pin. Rider GND -> Nano GND.
+  Rider OFF/ON slide switch = clock power switch.
+- Rider header, from the square pad: 1 USB, 2 GND, 3 BAT, 4 GND, 5 5V, 6 GND, 7 EN, 8 3V3
+  (read off the board, 2026-11-21).
+- Charging: USB-C into the TP4056 (needs its own hole in the case). Leave the Rider's USB-C and
+  header USB pin EMPTY. The Nano's USB is for uploading only. `power.kicad_sch` shows how to
+  charge from the Nano's USB instead (one wire soldered to the USB side of the Nano's diode).
+- The Rider Plus boost gives up to 2.4A, so the display's power-on surge (see the AA test below)
+  is not a concern.
+- Runtime estimate: roughly 10-20 h at brightness 1. Unmeasured.
 - BEFORE POWERING UP:
-  - Check LiPo plug polarity against the Rider's +/- markings. Plugs are not standardized and a
-    reversed cell can destroy the board.
-  - Check the Rider's charge current against the cell's max charge rate (600 mA or less is typical
-    for 600 mAh). Check Seeed's wiki for whether it can be lowered.
-  - The 5V pin bypasses the Nano's USB protection: switch the Rider OFF before plugging USB into the Nano.
-  - Pad labels above are from memory; confirm against Seeed's wiki.
-- Open: cell connector type and max charge rate (read the label).
+  - Check the cell's plug polarity against the TP4056 B+/B- and the Rider's +/- markings.
+  - Check the cell's label for its max charge rate (1A or more is needed with stock R3).
+  - Switch the Rider OFF before plugging USB into the Nano.
 
 ## Battery test: 2 x AA + small step-up board (tried 2026-11-21, failed)
 - 2 x AA (3V) into a small adjustable step-up board, its 5V into the Nano's USB socket.
@@ -100,7 +109,7 @@ Board is the Nano with the OLD bootloader, so the FQBN is `arduino:avr:nano:cpu=
 ## Next steps
 1. Plug in the Nano, upload `chess_clock`, wire the 4 buttons, test all states.
 2. Decide on a second display or alternating display for both clocks.
-3. Battery: confirm connector, polarity and charge rate, then build the power path.
+3. Battery: measure TP4056 R3, check cell polarity and charge rate, then build `power_simple`.
 4. Later: assess staying on the Nano vs moving to the Pico for the chessboard.
 
 ## Ideas / not done
