@@ -21,6 +21,13 @@ stepping stone for this.
 ## Status
 Testing a single sensor (2026-11-21).
 
+## Test results
+- 2026-11-21, one SS443R, 6 × 3 mm magnet, LED test (no code): **works**. Switches on one
+  magnet face only, as expected. Also works through a thin piece of wood, but the magnet has
+  to be very close and centred over the sensor. Not yet measured: wood thickness, max height,
+  how far off-centre it still switches.
+- Idea: more or bigger magnets per piece so an off-centre piece still registers.
+
 ## Open questions
 - What should the board do with a move: show it, log it, send it to an app or a chess site?
 - Detect only "a piece is here", or also which piece?
