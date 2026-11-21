@@ -27,7 +27,7 @@
 const uint8_t LOAD_PIN = 10;
 const bool REVERSED = false;
 const bool UPSIDE_DOWN = false;     // true if the display is mounted rotated 180 degrees
-const uint8_t BRIGHTNESS = 4;       // 0-15
+const uint8_t BRIGHTNESS = 1;       // 0-15 (kept low so weak battery supplies can cope)
 
 // Swap PIN_BTN_LEFT / PIN_BTN_RIGHT if the bottom side buttons are the wrong way round.
 const uint8_t PIN_BTN_LEFT = 4, PIN_START = 3, PIN_BTN_RIGHT = 2;
@@ -196,9 +196,28 @@ void updateDisplay(uint32_t now) {
 }
 
 // ---------- Main ----------
+// Display settings. The module can power up (or get knocked by a voltage dip) into
+// test mode with every segment lit, which draws a lot of current. So: switch it off,
+// set it up dim and blank, then switch it on. Called again every second to recover.
+void writeDisplayConfig() {
+  send(0x0F, 0x00);            // display test off
+  send(0x09, 0x00);            // no-decode mode (see FONT)
+  send(0x0B, 0x07);            // scan all 8 digits
+  send(0x0A, BRIGHTNESS);
+  send(0x0C, 0x01);            // normal operation (not shutdown)
+}
+void initDisplay() {
+  send(0x0C, 0x00);            // shutdown: display dark while we set it up
+  send(0x0F, 0x00);            // display test off
+  for (uint8_t r = 1; r <= 8; r++) send(r, 0x00);   // blank every digit
+  writeDisplayConfig();
+}
+
 void setup() {
   pinMode(LOAD_PIN, OUTPUT);
   digitalWrite(LOAD_PIN, HIGH);
+  pinMode(13, OUTPUT); pinMode(11, OUTPUT);   // CLK / DIN low before the display sees them
+  digitalWrite(13, LOW); digitalWrite(11, LOW);
   pinMode(PIN_P1, INPUT_PULLUP); pinMode(PIN_P2, INPUT_PULLUP);
   pinMode(PIN_START, INPUT_PULLUP);
   pinMode(PIN_BTN_LEFT, INPUT_PULLUP); pinMode(PIN_BTN_RIGHT, INPUT_PULLUP);
@@ -206,8 +225,7 @@ void setup() {
   bP1.begin(); bP2.begin(); bStart.begin(); bLeft.begin(); bRight.begin();
   SPI.begin();
   SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE0));
-  send(0x0F, 0x00); send(0x0C, 0x01); send(0x0B, 0x07);   // scan all 8 digits
-  send(0x09, 0x00); send(0x0A, BRIGHTNESS);   // no-decode mode (see FONT)
+  initDisplay();
   resetClock();
   lastTick = millis();
 }
@@ -273,6 +291,9 @@ void loop() {
     }
     if (b.released) sideArmed[side] = false;
   }
+
+  static uint32_t lastConfig = 0;
+  if (now - lastConfig >= 1000) { lastConfig = now; writeDisplayConfig(); }
 
   static uint32_t lastDraw = 0;
   if (now - lastDraw >= 50) { lastDraw = now; updateDisplay(now); }

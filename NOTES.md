@@ -63,6 +63,9 @@ Board is the Nano with the OLD bootloader, so the FQBN is `arduino:avr:nano:cpu=
 - Display: Player 1 on the left 3 digits, Player 2 on the right 3, the two middle digits blank.
   Format `MM.S` (10 min+, S = tens of seconds), `M.SS` (under 10 min), `SS.t` (under 1 min).
 - Display digits backwards? Flip `REVERSED` in the sketch.
+- Display start-up: kept switched off until it is dim and blank, then switched on. Settings
+  are resent every second so a voltage dip that knocks it into test mode (all 888) recovers.
+  `BRIGHTNESS = 1` (was 4) to keep current low on battery.
 
 ## Battery plan (not built yet)
 - Parts: Seeed LiPo Rider Plus (charger + 5V boost, USB-C charging, on/off switch) and a 600 mAh LiPo.
@@ -79,6 +82,20 @@ Board is the Nano with the OLD bootloader, so the FQBN is `arduino:avr:nano:cpu=
   - The 5V pin bypasses the Nano's USB protection: switch the Rider OFF before plugging USB into the Nano.
   - Pad labels above are from memory; confirm against Seeed's wiki.
 - Open: cell connector type and max charge rate (read the label).
+
+## Battery test: 2 x AA + small step-up board (tried 2026-11-21, failed)
+- 2 x AA (3V) into a small adjustable step-up board, its 5V into the Nano's USB socket.
+  Feeding the 5V pin directly doesn't suit this build, so power must go through USB.
+- Result: power LED on, display stuck on 888, pulsing. Turning the output up to 5.4V didn't help.
+- Cause: at power-on the MAX7219 lights every segment and pulls a current surge before the
+  sketch runs. The step-up board can't supply it, its output collapses, and it keeps restarting.
+  At 3V in, the cells supply about twice the output current, so AAs sag badly.
+- Not a code problem: the 888 appears before the Nano boots. The firmware changes above only
+  help once it is running.
+- Works fine from a USB power bank (using that for now).
+- If retrying AAs: a 470-1000 uF capacitor (10V+) across the step-up output (stripe leg to GND),
+  a third AA cell, or a step-up board rated 1A+. Still untested: does the Nano boot on the AAs
+  with the display unplugged?
 
 ## Next steps
 1. Plug in the Nano, upload `chess_clock`, wire the 4 buttons, test all states.
