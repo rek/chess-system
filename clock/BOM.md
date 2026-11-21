@@ -25,7 +25,7 @@ Prices left blank to fill in. The case and seesaw are 3D printed (not counted he
 |---:|---|---|---:|---:|
 | 1 | Seeed Lipo Rider Plus (v1.1) | 5V boost, on/off switch. Its own charger is NOT used (too fast) | | |
 | 1 | TP4056 module (HW-373, USB-C, with protection) | Charges the cell at its stock 1A; protects it | | |
-| 1 | LiPo cell, 1200 mAh, 3.7V | Check plug polarity and max charge rate (see NOTES.md) | | |
+| 1 | LiPo cell, 1200 mAh, 3.7V | Check plug polarity and max charge rate (see README.md) | | |
 | 1 | 1N5817 Schottky diode | Rider 5V to Nano 5V, stripe toward the Nano | | |
 | | **Total** | | | |
 

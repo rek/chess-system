@@ -1,20 +1,24 @@
-# Chess clock prototype
+# Chess clock
 
 Standalone two-player chess clock, a stepping stone toward a custom electronic chessboard
 (Hall-effect sensors + Raspberry Pi Pico). Keep it simple: this is a prototype.
 
-## Folder layout
-- Git repo: github.com/rek/chess-system (public). Only the .ino sketches and .md notes are
-  tracked; case designs (case.blend, models/*.stl) stay local on purpose.
-- `max7219_test/`: display test sketch (1234, 10.00, clear, digits, brightness). **Working.**
-- `chess_clock/`: the clock sketch. **Working** on the Nano (tested 2026-11-17).
-- `NOTES.md`: this file.
+## Folder layout (inside `clock/`)
+- `firmware/chess_clock/`: the clock sketch. **Working** on the Nano (tested 2026-11-17).
+- `firmware/max7219_test/`: display test sketch (1234, 10.00, clear, digits, brightness). **Working.**
+- `power/`: KiCad battery schematics and PDFs. Local only.
+- `case/`: `case.blend` and `models/*.stl` for the printed case. Local only.
+- `docs/schematic-brief.md`: brief for a wiring diagram / PCB.
+- `BOM.md`: parts list with prices. `README.md`: this file.
+- Only .ino and .md files are tracked in git (see the repo's `.gitignore`).
 
 ## Build and upload
 Board is the Nano with the OLD bootloader, so the FQBN is `arduino:avr:nano:cpu=atmega328old`.
 
-    arduino-cli compile --fqbn arduino:avr:nano:cpu=atmega328old chess_clock
-    arduino-cli upload  -p /dev/ttyUSB0 --fqbn arduino:avr:nano:cpu=atmega328old chess_clock
+Run from the `clock/` folder:
+
+    arduino-cli compile --fqbn arduino:avr:nano:cpu=atmega328old firmware/chess_clock
+    arduino-cli upload  -p /dev/ttyUSB0 --fqbn arduino:avr:nano:cpu=atmega328old firmware/chess_clock
 
 (Core `arduino:avr@1.8.8` installed. User is in the `uucp` group, so no sudo.)
 
