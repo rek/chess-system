@@ -33,6 +33,10 @@ const uint8_t BRIGHTNESS = 1;       // 0-15 (kept low so weak battery supplies c
 const uint8_t PIN_BTN_LEFT = 4, PIN_START = 3, PIN_BTN_RIGHT = 2;
 // Swap PIN_P1 / PIN_P2 if the clock is mirrored. (Swapped from the original 6 / 5.)
 const uint8_t PIN_P1 = 5, PIN_P2 = 6;
+// Active buzzer (has its own oscillator): + to D9, - to GND. HIGH = beep.
+const uint8_t PIN_BUZZER = 9;
+const uint8_t FLAG_BEEPS = 3;
+const uint16_t BEEP_ON_MS = 150, BEEP_OFF_MS = 150;
 
 const uint16_t DEBOUNCE_MS = 25;
 const uint16_t RESET_HOLD_MS = 1500;
@@ -133,7 +137,26 @@ bool resetFired = false;
 bool sideArmed[2] = {false, false};   // Left/Right press began while PAUSED
 bool sideLongFired[2] = {false, false};
 
+// Beeps run in the background so the clock keeps responding while they play.
+uint8_t beepsLeft = 0;
+uint32_t beepAt = 0;     // when the current on/off step started
+bool beepOn = false;
+void startBeeps(uint8_t n, uint32_t now) {
+  beepsLeft = n; beepOn = true; beepAt = now; digitalWrite(PIN_BUZZER, HIGH);
+}
+void stopBeeps() { beepsLeft = 0; beepOn = false; digitalWrite(PIN_BUZZER, LOW); }
+void updateBeeps(uint32_t now) {
+  if (beepsLeft == 0) return;
+  if (beepOn && now - beepAt >= BEEP_ON_MS) {
+    beepOn = false; beepAt = now; digitalWrite(PIN_BUZZER, LOW);
+    beepsLeft--;
+  } else if (!beepOn && now - beepAt >= BEEP_OFF_MS) {
+    beepOn = true; beepAt = now; digitalWrite(PIN_BUZZER, HIGH);
+  }
+}
+
 void resetClock() {
+  stopBeeps();
   remaining[0] = remaining[1] = PRESETS[presetIdx].timeMs;
   incMs = PRESETS[presetIdx].incMs;
   active = 0;
@@ -214,6 +237,8 @@ void initDisplay() {
 }
 
 void setup() {
+  pinMode(PIN_BUZZER, OUTPUT);
+  digitalWrite(PIN_BUZZER, LOW);
   pinMode(LOAD_PIN, OUTPUT);
   digitalWrite(LOAD_PIN, HIGH);
   pinMode(13, OUTPUT); pinMode(11, OUTPUT);   // CLK / DIN low before the display sees them
@@ -239,7 +264,7 @@ void loop() {
   uint32_t dt = now - lastTick;
   lastTick = now;
   if (state == RUNNING) {
-    if (dt >= remaining[active]) { remaining[active] = 0; state = FLAGGED; }
+    if (dt >= remaining[active]) { remaining[active] = 0; state = FLAGGED; startBeeps(FLAG_BEEPS, now); }
     else remaining[active] -= dt;
   }
 
@@ -291,6 +316,8 @@ void loop() {
     }
     if (b.released) sideArmed[side] = false;
   }
+
+  updateBeeps(now);
 
   static uint32_t lastConfig = 0;
   if (now - lastConfig >= 1000) { lastConfig = now; writeDisplayConfig(); }

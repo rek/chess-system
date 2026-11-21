@@ -11,6 +11,7 @@ Prices left blank to fill in. The case and seesaw are 3D printed (not counted he
 | 2 | End stop switch (microswitch) | Under each end of the seesaw: Player 1 on D5, Player 2 on D6 | Rs. 160 | Rs. 320 |
 | 3 | Push button (momentary) | Bottom row: Left D4, Start/Pause D3, Right D2 | Rs. 50 | Rs. 150 |
 | 12 | Magnet, 6 × 3 mm | Bought as a pack of 12 | Rs. 120 (pack) | Rs. 120 |
+| 1 | Buzzer, active (HYDZ) | Beeps when a player runs out of time: + to D9, - to GND | | |
 | 2 | LED | One per player, shows whose turn it is (not in firmware yet) | | |
 | 2 | Resistor, 330 Ω | Current limit for the LEDs (about 9 mA at 5V) | | |
 | 10 | M3 heat-set screw insert | | | |

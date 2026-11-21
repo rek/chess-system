@@ -37,6 +37,7 @@ Board is the Nano with the OLD bootloader, so the FQBN is `arduino:avr:nano:cpu=
 | Left button (bottom) | D4 to GND |
 | Player 1 button (top seesaw, left) | D5 to GND |
 | Player 2 button (top seesaw, right) | D6 to GND |
+| Buzzer (active, HYDZ, sealed bottom) | + (long lead) D9, - GND |
 
 - Buttons need no resistors (internal pull-ups).
 - Display: the two 5-pin rows are wired together except DIN/DOUT. Power, LOAD and CLK can come
@@ -58,7 +59,7 @@ Board is the Nano with the OLD bootloader, so the FQBN is `arduino:avr:nano:cpu=
   - Start resumes the player whose seesaw side is up.
   - Illegal move: offender presses their side, someone pauses, +1 min on the side that gets it,
     rock the seesaw back to the offender, Start resumes the offender's clock.
-- FLAGGED: the player at zero blinks `00.0`.
+- FLAGGED: the player at zero blinks `00.0` and the buzzer beeps 3 times.
 - Hold Start 1.5 s anytime to reset.
 - Display: Player 1 on the left 3 digits, Player 2 on the right 3, the two middle digits blank.
   Format `MM.S` (10 min+, S = tens of seconds), `M.SS` (under 10 min), `SS.t` (under 1 min).
@@ -113,5 +114,5 @@ with PDFs. Kept local, not in git.
 4. Later: assess staying on the Nano vs moving to the Pico for the chessboard.
 
 ## Ideas / not done
-- Buzzer on flag, LEDs for whose turn it is.
+- LEDs for whose turn it is.
 
