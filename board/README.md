@@ -17,6 +17,10 @@ stepping stone for this.
 
 ## Folders
 - `firmware/hall_test/`: one-sensor test on the Pico (MicroPython).
+- `firmware/tile_test/`: one-tile test, 16 sensors through one MCP23017 (MicroPython).
+- `schematic/make_tile_schematic.py`: generates the KiCad schematic for one tile,
+  `schematic/tile.kicad_sch` + `tile.pdf` (local, not tracked). Run from the repo root,
+  then `kicad-cli sch export pdf board/schematic/tile.kicad_sch -o board/schematic/tile.pdf`.
 - `tools/magnet_field.py`: field model used to pick the magnet layout.
 - `case/sensor_tile.py`: FreeCAD script for the sensor holder tile (see below). Run from
   the repo root with `freecadcmd board/case/sensor_tile.py`.
@@ -101,6 +105,12 @@ off-centre a piece still switches.
   slot). Check every sensor for shorts between legs before wiring the bus.
 
 ## Electronics
+- **GPA7 / GPB7 problem:** Microchip's MCP23017 datasheet (rev D, June 2022) says GPA7 and
+  GPB7 are output-only: an input changing during an I²C read can corrupt SDA. That leaves
+  14 safe inputs per chip, 56 for 4 chips, short of 64. The tile test uses them anyway and
+  reads twice to catch bad reads. If it shows problems, options: a 5th expander, wire 8
+  sensors straight to Pico pins, or swap to TCA9555 modules (16 true inputs, no built-in
+  pull-ups, so the 10 kΩ resistors are needed).
 - MCP23017 addresses: each of the 4 modules needs its own address, set with its A0–A2
   pads/jumpers: 0x20, 0x21, 0x22, 0x23. Label each tile with its address.
 - I²C: the bus runs through all 4 tiles (~0.5 m). Most MCP23017 modules have their own
