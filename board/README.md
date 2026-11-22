@@ -47,6 +47,13 @@ Testing a single sensor (2026-11-21).
 - **Chosen layout: 2 × 2 grid of 2-high stacks, holes at 7.0 mm pitch** (centres ±3.5 mm
   from the base centre, holes span 16.1 mm). Safe radius ~9 mm, centre ~100 mT.
   32 pieces × 8 = 256 magnets (300 on hand, 44 spare).
+  - The gap is set by the base size, not by field strength. A wider gap gives a slightly
+    wider switching area as long as the centre stays above the trip point. Use the widest
+    gap that leaves a ~0.8 mm rim: about 1.2 mm in an 18 mm base, 1.9 mm in a 19 mm base.
+  - Model check: on-axis field matches the textbook cylinder formula (78 mT at 4.5 mm for
+    one 6 × 6 stack). Absolute numbers depend on magnet grade (N35 assumed), the real
+    distance and the sensor's trip point; the bench showed a stronger centre than the
+    model predicts, so treat the model as a comparison between layouts.
   - Magnets are embedded mid-print (pause at the pocket top), not glued. Keep the floor
     under them thin (2–3 layers, ~0.6 mm): it adds to the magnet-to-sensor distance.
     Magnet edge-to-edge gap 1.0 mm (0.8 mm wall + 0.1 mm clearance each side).
