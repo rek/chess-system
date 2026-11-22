@@ -89,6 +89,12 @@ off-centre a piece still switches.
   0.15 mm printed ~0.1–0.2 mm loose). Sensor lies face up, flush with the deck top, so it
   touches the underside of the 3 mm top sheet. Leads bend straight down through a slot
   on the pocket's -y side.
+- MCP23017 module (CJMCU-2317, 26.7 × 21.5 mm, no mounting holes) snaps into two clips
+  under the deck, centred in the a1–b2 bay, long side along x, 5 mm below the deck. Clips
+  grip only the middle of its short edges (the long edges carry the pins): a 1 mm flexible
+  arm with a 0.5 mm hook, and two stops that touch the board 1 mm in from its edge. Mount
+  it labels-out so you can read the pins; check no part on the deck-facing side sits within
+  1 mm of the short edges at the middle.
 - Under the deck: perimeter walls + one cross rib make 4 open bays (20 mm tall) for wiring,
   the MCP23017 and (on one tile) the Pico. Wire notches at the bottom of every wall/rib.
   Electronics live under the board, so no frame is needed.

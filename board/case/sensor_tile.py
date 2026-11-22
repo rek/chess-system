@@ -14,6 +14,7 @@
 #   wall holes (on 2.4 mm pads, at 20/140 mm): M3 bolts join neighbouring tiles (same holes on all 4 sides, so the tile
 #     works in any corner, rotated)
 #   notches at the bottom of walls and ribs: wires pass between bays and tiles
+#   two snap clips in the a1-b2 bay hold the MCP23017 module (CJMCU-2317)
 import os
 import FreeCAD as App, Part, Mesh, MeshPart
 V = App.Vector
@@ -41,6 +42,18 @@ BOLT_Z   = 10.0           # bolt height above the bottom edge
 BOLT_AT  = (SQUARE / 2, SIZE - SQUARE / 2)   # 20 and 140 mm along each side, clear of the notches
 NOTCH_W, NOTCH_H = 12.0, 8.0   # wire notch at the bottom of walls/ribs
 
+# MCP23017 module (CJMCU-2317, 26.7 x 21.5 mm, no mounting holes) snaps in under the deck,
+# centred in the a1-b2 bay, long side along x. Pins run along both long edges, so it is held
+# only at the middle of its two short edges: a flexible arm with a hook, plus two small stops
+# that set the gap to the deck. These sit on the solid deck band along y = 40.
+MOD_X, MOD_Y = 26.7, 21.5     # module size
+MOD_C    = (40.0, 40.0)       # centre (tile coordinates, a1 corner = 0,0)
+MOD_GAP  = 5.0                # deck underside to module face (room for chip / solder joints)
+PCB_T    = 1.6
+ARM_W, ARM_T = 3.0, 1.0       # snap arm width (y) and thickness (x)
+HOOK     = 0.5                # how far the hook reaches over the board edge
+STOP_IN  = 1.0                # stops touch the board only this far in from its edge
+
 OUT = os.path.join(os.getcwd(), "board", "case", "models")
 
 def box(x, y, z, dx, dy, dz):
@@ -58,6 +71,22 @@ for k in BOLT_AT:   # bolt pads, full height so they print without overhangs
               box(k - PAD_W / 2, SIZE - WALL - PAD_T, 0, PAD_W, PAD_T, deck_z),
               box(WALL, k - PAD_W / 2, 0, PAD_T, PAD_W, deck_z),
               box(SIZE - WALL - PAD_T, k - PAD_W / 2, 0, PAD_T, PAD_W, deck_z)]
+# module clips: for each short edge, an arm + hook and two stops either side of it
+def hook(xe, inward):
+    zb = deck_z - MOD_GAP - PCB_T - 0.15            # just below the module's far face
+    pts = [V(xe, MOD_C[1] - ARM_W / 2, zb), V(xe + inward * HOOK, MOD_C[1] - ARM_W / 2, zb),
+           V(xe, MOD_C[1] - ARM_W / 2, zb - 1.5), V(xe, MOD_C[1] - ARM_W / 2, zb)]
+    return Part.Face(Part.makePolygon(pts)).extrude(V(0, ARM_W, 0))
+for side in (-1, 1):
+    xe = MOD_C[0] + side * (MOD_X / 2 + 0.15)       # board edge + clearance
+    inward = -side
+    zb = deck_z - MOD_GAP - PCB_T - 0.15
+    arm_x0 = xe if side > 0 else xe - ARM_T
+    walls.append(box(arm_x0, MOD_C[1] - ARM_W / 2, zb - 1.5, ARM_T, ARM_W, deck_z - (zb - 1.5)))
+    walls.append(hook(xe, inward))
+    sx0 = xe - STOP_IN - 0.15 if side > 0 else xe
+    for y0 in (MOD_C[1] - ARM_W / 2 - 0.3 - 1.4, MOD_C[1] + ARM_W / 2 + 0.3):
+        walls.append(box(sx0, y0, deck_z - MOD_GAP, STOP_IN + 0.15, 1.4, MOD_GAP))
 tile = tile.fuse(walls)
 
 cuts = []

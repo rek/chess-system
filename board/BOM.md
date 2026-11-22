@@ -7,7 +7,7 @@ Build: 64-square Hall-effect chessboard. LEDs are not included in this build.
 | Qty | Part | Notes | Status |
 |---:|---|---|---|
 | 1 | Raspberry Pi Pico (SC0915, RP2040) | Controller | Have |
-| 4 | MCP23017 module | 16-bit I²C GPIO expander, 4 × 16 = 64 inputs | Have |
+| 4 | MCP23017 module (CJMCU-2317, 26.7 × 21.5 mm) | 16-bit I²C GPIO expander, 4 × 16 = 64 inputs (see README: GPA7/GPB7) | Have |
 | 64 | Honeywell SS443R Hall-effect sensor | Unipolar on/off switch, open-collector output. Power from 5 V (see README) | Have |
 | 300 | Neodymium disc magnet, 6 × 3 mm | 9 per piece: centre + ring of 8 (288 used, 12 spare), see README | Have |
 

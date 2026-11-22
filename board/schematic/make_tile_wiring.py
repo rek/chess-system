@@ -45,17 +45,16 @@ for k in (20, 140):   # bolt pads
 squares = [f + str(r) for r in range(1, 5) for f in "abcd"]
 pin_of = {sq: ("GPA%d" % i if i < 8 else "GPB%d" % (i - 8)) for i, sq in enumerate(squares)}
 
-# MCP23017 module in the a1-b2 bay, between the sensor rows and clear of the rails
-MX0, MX1, MY0, MY1 = 46, 70, 29.5, 39
-rect(MX0, MY0, MX1, MY1, "#cfe8ff", "#1f77b4", 2)
-text(58, 35, "MCP23017", 12, "#1f77b4", bold=True); text(58, 31.5, "addr 0x20", 10, "#1f77b4")
+# MCP23017 module (CJMCU-2317, 26.7 x 21.5 mm) snapped into its clips, centred in the a1-b2 bay.
+# Drawn last, on top: it sits below the wires that run under it.
+MX0, MX1, MY0, MY1 = 26.65, 53.35, 29.25, 50.75
 
 # ---- power rails: a spine down the middle of each bay, joined through the notches ----
 for bx in (40, 120):
     line([(bx - 1.5, 12), (bx - 1.5, 133)], RED, 3)      # 5V spine (through notch (bx, 80))
     line([(bx + 1.5, 10), (bx + 1.5, 131)], BLK, 3)      # GND spine
-line([(38.5, 42), (118.5, 42)], RED, 3)                  # left-right link through notch (80, 40)
-line([(41.5, 45), (121.5, 45)], BLK, 3)
+line([(38.5, 44), (118.5, 44)], RED, 3)                  # left-right link through notch (80, 40)
+line([(41.5, 46), (121.5, 46)], BLK, 3)
 
 # ---- sensors ----
 mcp_entry = {}
@@ -100,6 +99,13 @@ for sq, (lx, sy, cx, cy) in mcp_entry.items():
             pts = [(lx, sy), (nx, sy), (nx, 70 - 0.8 * k), (cx_col, 70 - 0.8 * k), (cx_col, cyx), (73 - 0.3 * k, cyx), (73 - 0.3 * k, ty), (MX1, ty)]
     line(pts, SIG, 1.2)
 
+# module on top, with its two snap clips
+rect(MX0, MY0, MX1, MY1, "#cfe8ff", "#1f77b4", 2)
+for xe in (MX0 - 0.6, MX1 + 0.6):
+    rect(xe - 0.6, 38.5, xe + 0.6, 41.5, "#555", "#000")
+text(40, 41.5, "MCP23017", 12, "#1f77b4", bold=True); text(40, 37.5, "CJMCU-2317  0x20", 9, "#1f77b4")
+text(40, 33.5, "labels face you", 9, "#1f77b4")
+
 # ---- bus in: through the outer-wall notch at (40, 0) ----
 line([(38.5, -8), (38.5, 12)], RED, 3); line([(41.5, -8), (41.5, 10)], BLK, 3)
 line([(43.5, -8), (43.5, 4), (48, 4), (48, MY0)], ORG, 2.2)
@@ -133,7 +139,8 @@ notes = ["Rails: + and GND run down the middle of each bay",
          "and pass between bays through the notches.",
          "Signals: one wire per sensor to the MCP23017",
          "(ribbon cable works well, 4 wires per bay).",
-         "MCP23017 sits lowest in its bay, over the wires.",
+         "MCP23017 snaps into 2 clips (dark marks), 5 mm",
+         "below the deck; wires can run under it.",
          "Also: 100 nF across MCP VCC/GND, 10 uF across 5V/GND.",
          "Check each sensor's legs for shorts before power."]
 for k, n in enumerate(notes):
