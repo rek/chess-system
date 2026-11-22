@@ -95,6 +95,10 @@ off-centre a piece still switches.
   arm with a 0.5 mm hook, and two stops that touch the board 1 mm in from its edge. Mount
   it labels-out so you can read the pins; check no part on the deck-facing side sits within
   1 mm of the short edges at the middle.
+- Wiring the module: solder wires straight into its holes **before** clipping it in (no
+  header pins: header + Dupont plugs would stick ~5 mm out below the tile). Trim the solder
+  tails on the deck side short, and use **insulated** wire for the 5V/GND rails, which pass
+  under the module next to those joints.
 - Under the deck: perimeter walls + one cross rib make 4 open bays (20 mm tall) for wiring,
   the MCP23017 and (on one tile) the Pico. Wire notches at the bottom of every wall/rib.
   Electronics live under the board, so no frame is needed.
