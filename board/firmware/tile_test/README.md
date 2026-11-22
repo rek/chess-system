@@ -33,11 +33,16 @@ Also fit a 100 nF capacitor across the MCP23017's VCC and GND (skip if the modul
 has one) and a 10 µF across +5V and GND on the tile.
 
 ## Build order
-1. Wire the Pico, MCP23017 and **one** sensor (a1). Run the test: it must find `0x20` and
-   show a1 switching.
-2. Add the other 15 sensors. Before powering, check every sensor with the multimeter on
-   continuity: no beep between any two of its legs.
-3. Run the test and put a piece on each square in turn.
+Follow the SAFE BUILD ORDER at the bottom of the wiring map. In short:
+1. Multimeter on continuity before any power: 5V-GND, 3V3-GND and 5V-3V3 must not beep, and
+   no beep between any two legs of a sensor.
+2. Sensors, the 5V/GND chain and the WAGOs only, signal wires loose. Power up and check no
+   loose signal wire reads 5 V to GND.
+3. The module's south edge only (3V3, GND, SDA, SCL, RESET, A0-A2, C1). Run the test: it must
+   find `0x20`.
+4. Power off. Solder the 16 pull-ups and the signal wires into the module, clip it in (legs
+   into the comb), bend the tips up, solder the 3V3 wire and its jumper to VCC. Run the test
+   and put a piece on each square in turn.
 
 ## Run
 From the repo root: `mpremote run board/firmware/tile_test/main.py`

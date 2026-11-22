@@ -34,7 +34,9 @@ stepping stone for this.
 
 ## Status
 Design stage (2026-11-22): one sensor tested, magnet layout chosen, piece magnet base and
-sensor holder tile modelled. Next: print a test tile and a test puck, measure how far
+sensor holder tile modelled (sensor-fit coupon printed and fits; pull-up comb and WAGO
+holders added since). Next: print the module and WAGO coupons, then a full test tile and a
+test puck, wire one tile from the wiring map, measure how far
 off-centre a piece still switches.
 
 ## Test results
@@ -140,7 +142,7 @@ off-centre a piece still switches.
   double-sided tape or a few dots of glue, lined up so its squares sit over the sensors
   (sensor centres are 20 mm in from each tile edge). The sheet must be non-magnetic
   (wood, MDF, acrylic).
-- Before printing a full tile, print the coupons (~10 g each):
+- Before printing a full tile, print the coupons (2-6 g each):
   - `sensor_tile_coupon`: one corner square. Check a sensor sits snug and flush.
   - `sensor_tile_module_coupon`: module clips + pull-up comb. Check the module snaps in and
     a resistor's leg drops into a comb slot.
