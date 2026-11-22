@@ -7,7 +7,7 @@ import os
 OUT = os.path.join("board", "schematic", "tile_wiring.svg")
 S, M = 4.0, 40            # px per mm, margin px
 SIZE, SQ = 160.0, 40.0
-W, H = int(SIZE * S + 2 * M + 330), int(SIZE * S + 2 * M + 150)
+W, H = int(SIZE * S + 2 * M + 430), int(SIZE * S + 2 * M + 150 + 1110)
 
 # underside view: flip left-right (x mirrors), model +y stays up the page
 X = lambda x: M + (SIZE - x) * S
@@ -170,7 +170,116 @@ notes = ["Rails: + and GND run down the middle of each bay",
          "Check each sensor's legs for shorts before power."]
 for k, n in enumerate(notes):
     text(lx0, ly0 + 385 + 16 * k, n, 11, anchor="start", raw=True)
-text(M, H - 20, "To scale: 4 px per mm. Grey = tile walls and centre rib, white slots = wire notches, circles = M3 bolt holes.", 11, anchor="start", raw=True)
+text(M, M + SIZE * S + 80, "Map to scale: 4 px per mm. Grey = tile walls and centre rib, white slots = wire notches, circles = M3 bolt holes.", 11, anchor="start", raw=True)
+# ======================================================================================
+# MODULE CLOSE-UP: every connection at the MCP23017, the Pico, the capacitors and the
+# pull-up resistors. Build these connections; the map above shows where the wires run.
+# ======================================================================================
+T0 = M + SIZE * S + 150                     # top of the close-up section
+Z = 14.0                                    # px per mm in the close-up
+o.append(f'<line x1="{M}" y1="{T0 - 30}" x2="{W - M}" y2="{T0 - 30}" stroke="#999" stroke-width="1"/>')
+text(M, T0 - 8, "MCP23017 CLOSE-UP (seen from underneath, label side facing you): build these connections exactly", 14, anchor="start", bold=True, raw=True)
+mx0, my0 = M + 400, T0 + 250                # module top-left (px)
+mw, mh = 26.7 * Z, 21.5 * Z
+o.append(f'<rect x="{mx0}" y="{my0}" width="{mw}" height="{mh}" fill="#cfe8ff" stroke="#1f77b4" stroke-width="2"/>')
+text(mx0 + mw / 2, my0 + mh / 2 + 5, "MCP23017 (CJMCU-2317)", 14, "#1f77b4", bold=True, raw=True)
+px = lambda k: mx0 + mw / 2 + (k - 4.5) * 2.54 * Z
+yo, yi, ys = my0 + 18, my0 + 18 + 2.54 * Z, my0 + mh - 18    # north outer, north inner, south rows
+def hole(x, y): o.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="7" fill="white" stroke="#1f77b4" stroke-width="1.5"/>')
+def seg(pts, col, w=2.2):
+    o.append('<polyline points="' + " ".join(f"{a:.1f},{b:.1f}" for a, b in pts) + f'" fill="none" stroke="{col}" stroke-width="{w}" stroke-linejoin="round"/>')
+def rtext(x, y, t, size=10, col="#000", ang=-90, bold=False):
+    o.append(f'<text x="{x:.1f}" y="{y:.1f}" font-size="{size}" fill="{col}"{" font-weight=\"bold\"" if bold else ""} transform="rotate({ang} {x:.1f} {y:.1f})">{t}</text>')
+
+north = ["VCC/GND", "ITB/ITA"] + [f"B{n}/A{n}" for n in range(8)]
+south = ["A2", "A1", "A0", "RESET", "NC/SO", "NC/CS", "SDA", "SCL", "GND", "VCC"]
+for k in range(10):
+    hole(px(k), yo); hole(px(k), yi); hole(px(k), ys)
+    rtext(px(k) + 4, yi + 62, north[k], 10, "#1f77b4")
+    rtext(px(k) + 4, ys - 12, south[k], 10, "#1f77b4")
+
+# north edge: 16 inputs. Each pair = one A pin + one B pin. 10k from each pin up to the 3V3 bus,
+# and the sensor wire solders to the same pin.
+PB = my0 - 200
+seg([(px(2) - 20, PB), (mx0 + mw + 45, PB)], ORG, 3)
+for k in range(2, 10):
+    n = k - 2
+    for dx, row_y, port in ((-9, yo, "A"), (9, yi, "B")):
+        x = px(k) + dx
+        sq = squares[n] if port == "A" else squares[8 + n]
+        seg([(x, PB), (x, PB + 10)], ORG, 1.6)
+        o.append(f'<rect x="{x - 4:.1f}" y="{PB + 10:.1f}" width="8" height="26" fill="#f3e2c0" stroke="#000" stroke-width="1"/>')
+        seg([(x, PB + 36), (x, row_y - 7)], SIG, 1.8)
+        rtext(x + 5, my0 - 12, f"{sq} = GP{port}{n}", 10, "#7a5a00", bold=True)
+text(px(2) - 26, PB + 4, "3V3 pull-up bus", 12, ORG, anchor="end", bold=True, raw=True)
+text(px(2) - 26, PB + 28, "R1-R16: 10k each", 12, "#000", anchor="end", bold=True, raw=True)
+text(px(2) - 26, PB + 44, "(one per input pin)", 11, "#000", anchor="end", raw=True)
+text(px(0) - 12, PB + 110, "sensor wire for each square", 12, "#7a5a00", anchor="end", bold=True, raw=True)
+text(px(0) - 12, PB + 126, "solders to the same pin", 11, "#7a5a00", anchor="end", raw=True)
+text(px(0) - 12, PB + 142, "as its resistor", 11, "#7a5a00", anchor="end", raw=True)
+rtext(px(0) + 4, yo - 12, "empty", 10, "#c00", bold=True)
+rtext(px(1) + 4, yo - 12, "empty", 10, "#c00", bold=True)
+text(px(0) - 12, yo + 4, "VCC/GND and ITB/ITA pairs: leave empty", 11, "#c00", anchor="end", bold=True, raw=True)
+
+# south edge: power, I2C, address, reset. Short labelled stubs only, so no lines cross:
+# every stub labelled GND joins the GND rail, every 3V3 stub joins 3V3.
+BY = ys + 150
+def stub(k, col, label, length=55, label_col=None):
+    seg([(px(k), ys + 7), (px(k), ys + length)], col, 3)
+    rtext(px(k) + 4, ys + length + 8 + 6 * len(label), label, 11, label_col or col, bold=True)
+stub(0, BLK, "GND"); stub(1, BLK, "GND"); stub(2, BLK, "GND")
+stub(3, ORG, "3V3")
+for k in (4, 5):
+    rtext(px(k) + 4, ys + 60, "empty", 10, "#c00", bold=True)
+for k, col in ((6, BLU), (7, GRN), (8, BLK)):
+    seg([(px(k), ys + 7), (px(k), BY)], col, 3)
+seg([(px(9), ys + 7), (px(9), BY)], ORG, 3)
+seg([(px(9), ys + 48), (mx0 + mw + 45, ys + 48), (mx0 + mw + 45, PB)], ORG, 3)  # VCC up to the pull-up bus
+o.append(f'<circle cx="{px(9):.1f}" cy="{ys + 48:.1f}" r="4" fill="{ORG}"/>')
+text(px(0) - 12, ys + 40, "A2, A1, A0 and RESET:", 11, anchor="end", bold=True, raw=True)
+text(px(0) - 12, ys + 56, "short wires: A2-A0 to the GND rail,", 11, anchor="end", raw=True)
+text(px(0) - 12, ys + 72, "RESET to the 3V3 bus (address 0x20)", 11, anchor="end", raw=True)
+cx1 = (px(8) + px(9)) / 2                                                      # C1 across GND-VCC
+seg([(px(8), ys + 28), (cx1 - 4, ys + 28)], BLK, 1.6); seg([(cx1 + 4, ys + 28), (px(9), ys + 28)], ORG, 1.6)
+o.append(f'<line x1="{cx1 - 4}" y1="{ys + 18}" x2="{cx1 - 4}" y2="{ys + 38}" stroke="#000" stroke-width="3"/><line x1="{cx1 + 4}" y1="{ys + 18}" x2="{cx1 + 4}" y2="{ys + 38}" stroke="#000" stroke-width="3"/>')
+text(mx0 + mw + 55, ys + 22, "C1 100nF across GND and VCC", 11, anchor="start", bold=True, raw=True)
+text(mx0 + mw + 55, ys + 37, "(either way round)", 11, anchor="start", raw=True)
+for x, t in ((px(6), "SDA"), (px(7), "SCL"), (px(8), "GND"), (px(9), "3V3")):
+    rtext(x + 4, BY + 32, t, 10, "#000", bold=True)
+text(mx0 + mw + 55, BY - 4, "these 4 + the 5V rail = the bus,", 11, anchor="start", raw=True)
+text(mx0 + mw + 55, BY + 11, "out through the bus notch to the Pico", 11, anchor="start", raw=True)
+
+# Pico box
+pico_x, pico_y = M, BY + 60
+o.append(f'<rect x="{pico_x}" y="{pico_y}" width="420" height="125" fill="#e9f7e9" stroke="#2ca02c" stroke-width="2"/>')
+text(pico_x + 10, pico_y + 20, "Raspberry Pi Pico (powered by USB)", 13, "#185c18", anchor="start", bold=True, raw=True)
+rows = [(RED, "VBUS     pin 40  ->  +5V rail (every sensor leg 1)"), (BLK, "GND      pin 38  ->  GND rail and MCP GND"),
+        (ORG, "3V3(OUT) pin 36  ->  MCP VCC (3V3 only, never 5V)"), (BLU, "GP4      pin 6   ->  MCP SDA"), (GRN, "GP5      pin 7   ->  MCP SCL")]
+for j, (col, t) in enumerate(rows):
+    yy = pico_y + 42 + 18 * j
+    o.append(f'<line x1="{pico_x + 10}" y1="{yy - 4}" x2="{pico_x + 34}" y2="{yy - 4}" stroke="{col}" stroke-width="5"/>')
+    o.append(f'<text x="{pico_x + 42}" y="{yy}" font-size="12" font-family="monospace">{t}</text>')
+
+# C2 electrolytic on the 5V rail
+c2x, c2y = pico_x + 470, pico_y + 10
+o.append(f'<line x1="{c2x}" y1="{c2y}" x2="{c2x + 60}" y2="{c2y}" stroke="{RED}" stroke-width="3"/><line x1="{c2x}" y1="{c2y + 60}" x2="{c2x + 60}" y2="{c2y + 60}" stroke="{BLK}" stroke-width="3"/>')
+o.append(f'<rect x="{c2x + 18}" y="{c2y + 12}" width="24" height="36" rx="3" fill="#335" stroke="#000"/><rect x="{c2x + 18}" y="{c2y + 38}" width="24" height="10" fill="#ddd"/>')
+o.append(f'<line x1="{c2x + 30}" y1="{c2y}" x2="{c2x + 30}" y2="{c2y + 12}" stroke="#000" stroke-width="2"/><line x1="{c2x + 30}" y1="{c2y + 48}" x2="{c2x + 30}" y2="{c2y + 60}" stroke="#000" stroke-width="2"/>')
+text(c2x + 70, c2y + 4, "+5V rail", 12, RED, anchor="start", bold=True, raw=True)
+text(c2x + 70, c2y + 24, "C2 10uF electrolytic, anywhere on the tile's rails", 12, anchor="start", raw=True)
+text(c2x + 70, c2y + 40, "STRIPE (-) leg to GND. Backwards it can pop.", 12, "#c00", anchor="start", bold=True, raw=True)
+text(c2x + 70, c2y + 64, "GND rail", 12, BLK, anchor="start", bold=True, raw=True)
+
+# safe build order
+steps = ["SAFE BUILD ORDER",
+         "1. Before any power, multimeter on continuity: 5V-GND, 3V3-GND and 5V-3V3 must NOT beep. Each sensor: no beep between any two legs.",
+         "2. Wire sensors + 5V/GND rails only, signal wires loose. Power the Pico. Measure each loose signal wire to GND: must NOT read 5 V.",
+         "   A 5 V reading means that sensor's legs are wired wrong. Fix it before anything touches the MCP23017.",
+         "3. Wire the module's south edge only (3V3, GND, SDA, SCL, RESET, A0-A2, C1). Run the tile test: it must find 0x20, all squares empty.",
+         "4. Power off. Add the 16 pull-ups and the signal wires. Run the test again and try every square.",
+         "Follow the LABELS printed on your module. If it's turned round, the positions here flip; the names don't."]
+for j, t in enumerate(steps):
+    text(M, pico_y + 175 + 19 * j, t, 13 if j == 0 else 12, "#c00" if j in (0, 6) else "#000", anchor="start", bold=(j in (0, 6)), raw=True)
 o.append("</svg>")
 open(OUT, "w").write("\n".join(o))
 print("wrote", OUT)

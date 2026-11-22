@@ -10,6 +10,9 @@ from machine import Pin, I2C
 import time
 
 ADDR = 0x20
+# The module's double row is labelled "B0/A0" etc. without saying which hole is A. If the test
+# shows rows 1 and 3 swapped (and 2 and 4), the A/B rows are the other way round: set this True.
+AB_SWAPPED = False
 IODIRA, GPPUA, GPIOA = 0x00, 0x0C, 0x12   # BANK=0 register map; A and B are consecutive
 
 i2c = I2C(0, sda=Pin(4), scl=Pin(5), freq=100000)
@@ -28,6 +31,8 @@ SQUARES = [f + str(r) for r in range(1, 5) for f in "abcd"]   # a1 b1 c1 d1 a2 .
 
 def read_raw():
     a, b = i2c.readfrom_mem(ADDR, GPIOA, 2)
+    if AB_SWAPPED:
+        a, b = b, a
     return a | (b << 8)
 
 bad_reads = 0

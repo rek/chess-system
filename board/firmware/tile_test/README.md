@@ -7,6 +7,8 @@ piece.
 ## Wiring
 Schematic: `board/schematic/tile.pdf` (made by `board/schematic/make_tile_schematic.py`).
 Wiring map, seen from underneath: `board/schematic/tile_wiring.svg` (made by `make_tile_wiring.py`).
+**Build from the wiring map**: its lower half is a close-up of every connection at the
+MCP23017, the Pico and the capacitors, plus the safe build order.
 
 | From | To |
 |---|---|
@@ -44,6 +46,9 @@ From the repo root: `mpremote run board/firmware/tile_test/main.py`
 ## What to look for
 - Each square switches ON when a piece is placed and off when it's lifted, and no other
   square changes.
+- Rows 1 and 3 (and 2 and 4) swapped? The module's A and B rows are the other way round
+  from the wiring map: set `AB_SWAPPED = True` at the top of `main.py`. Nothing is wired
+  wrong electrically.
 - `bad reads` stays at 0 or close to it. If it climbs when you place pieces on d2 or d4,
   that's the GPA7/GPB7 problem (see `board/README.md`).
 - A square stuck ON or flickering: check its 10 kΩ pull-up to 3V3 and its wire.
