@@ -21,6 +21,8 @@ stepping stone for this.
 - `schematic/make_tile_schematic.py`: generates the KiCad schematic for one tile,
   `schematic/tile.kicad_sch` + `tile.pdf` (local, not tracked). Run from the repo root,
   then `kicad-cli sch export pdf board/schematic/tile.kicad_sch -o board/schematic/tile.pdf`.
+- `schematic/make_tile_wiring.py`: to-scale wiring map of one tile seen from underneath
+  (where you solder), `schematic/tile_wiring.svg` (local). Open it in a browser.
 - `tools/magnet_field.py`: field model used to pick the magnet layout.
 - `case/sensor_tile.py`: FreeCAD script for the sensor holder tile (see below). Run from
   the repo root with `freecadcmd board/case/sensor_tile.py`.

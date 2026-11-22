@@ -6,6 +6,7 @@ piece.
 
 ## Wiring
 Schematic: `board/schematic/tile.pdf` (made by `board/schematic/make_tile_schematic.py`).
+Wiring map, seen from underneath: `board/schematic/tile_wiring.svg` (made by `make_tile_wiring.py`).
 
 | From | To |
 |---|---|
