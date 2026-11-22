@@ -44,7 +44,7 @@ Testing a single sensor (2026-11-21).
 - **Chosen layout: 7 single magnets (not stacked) in a hex "flower"**, 1 in the centre and
   6 around it at 7.5 mm centre-to-centre (1.5 mm gaps), about 21 mm across. Safe radius
   ~10.3 mm, centre ~72 mT. Beats every 8-magnet layout tested, with one fewer magnet.
-  32 pieces × 7 = 224 magnets.
+  32 pieces × 7 = 224 magnets (300 on hand, 76 spare).
   - Base too small for 21 mm: same flower with magnets touching (18 mm), safe radius ~9.5 mm.
   - Budget option: 4 singles in a touching 2 × 2 square (14.5 mm), safe radius ~7.8 mm.
   - Field 22 mm away is tiny and the wrong pole, so the neighbouring square won't trigger.

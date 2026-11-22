@@ -9,7 +9,7 @@ Build: 64-square Hall-effect chessboard. LEDs are not included in this build.
 | 1 | Raspberry Pi Pico (SC0915, RP2040) | Controller | Have |
 | 4 | MCP23017 module | 16-bit I²C GPIO expander, 4 × 16 = 64 inputs | Have |
 | 64 | Honeywell SS443R Hall-effect sensor | Unipolar on/off switch, open-collector output. Power from 5 V (see README) | Have |
-| 32 | Neodymium disc magnet | One per chess piece | To obtain |
+| 300 | Neodymium disc magnet, 6 × 3 mm | 7 per piece in a hex layout (224 used, 76 spare), see README | Have |
 
 ## Passive components
 
