@@ -17,6 +17,12 @@ stepping stone for this.
 
 ## Folders
 - `firmware/hall_test/`: one-sensor test on the Pico (MicroPython).
+- `tools/magnet_field.py`: field model used to pick the magnet layout.
+- `case/magnet_base.py`: FreeCAD script for the piece magnet bases. Run from the repo root
+  with `freecadcmd board/case/magnet_base.py`. Writes STEP + STL to `case/models/` (local,
+  not tracked): `magnet_base_9` / `magnet_base_7` (35 mm test puck, 0.6 mm floor, pockets
+  6.4 × 3.2 mm open on top) and `magnet_cutter_9` / `magnet_cutter_7` (pockets only, to
+  subtract from a piece model).
 
 ## Status
 Testing a single sensor (2026-11-21).
