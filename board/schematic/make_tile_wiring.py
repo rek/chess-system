@@ -1,17 +1,20 @@
-# Generates a to-scale wiring map of ONE sensor tile, seen from UNDERNEATH (where you solder).
+# Generates the wiring map of ONE sensor tile, seen from UNDERNEATH (where you solder).
 # Run from the repo root:  python3 board/schematic/make_tile_wiring.py
-# Writes board/schematic/tile_wiring.svg (open it in a browser).
+# Writes board/schematic/tile_wiring.svg (open it in a browser). This is the build reference:
+#   panel A: 5V + GND chain (sensor to sensor, joined on the legs) and the WAGO bus junction
+#   panel B: one signal wire per sensor to the MCP23017
+#   close-up: every connection at the MCP23017, the Pico, the capacitors, the pull-ups
 # Dimensions follow board/case/sensor_tile.py; connections follow tile.kicad_sch.
 import os
 
 OUT = os.path.join("board", "schematic", "tile_wiring.svg")
-S, M = 4.0, 40            # px per mm, margin px
+S, M = 4.0, 40            # px per mm on the panels, page margin px
 SIZE, SQ = 160.0, 40.0
-W, H = int(SIZE * S + 2 * M + 430), int(SIZE * S + 2 * M + 150 + 1110)
-
-# underside view: flip left-right (x mirrors), model +y stays up the page
-X = lambda x: M + (SIZE - x) * S
-Y = lambda y: M + (SIZE - y) * S
+PA, PB_X, PY = 80, 840, 150                # panel A x, panel B x, panels y (tile top-left, px)
+W, H = int(PB_X + SIZE * S + 60), 2090
+OX, OY = PA, PY
+X = lambda x: OX + (SIZE - x) * S          # underside view: x mirrors, model +y up the page
+Y = lambda y: OY + (SIZE - y) * S
 o = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" font-family="sans-serif">',
      f'<rect width="{W}" height="{H}" fill="white"/>']
 def line(pts, col, w=2.0, dash=None):
@@ -22,160 +25,177 @@ def rect(x0, y0, x1, y1, fill="none", stroke="#999", w=1):
     xa, xb = sorted((X(x0), X(x1))); ya, yb = sorted((Y(y0), Y(y1)))
     o.append(f'<rect x="{xa:.1f}" y="{ya:.1f}" width="{xb-xa:.1f}" height="{yb-ya:.1f}" fill="{fill}" stroke="{stroke}" stroke-width="{w}"/>')
 def text(x, y, t, size=11, col="#000", anchor="middle", bold=False, raw=False):
-    px, py = (x, y) if raw else (X(x), Y(y))
-    o.append(f'<text x="{px:.1f}" y="{py:.1f}" font-size="{size}" fill="{col}" text-anchor="{anchor}"{" font-weight=\"bold\"" if bold else ""}>{t}</text>')
+    px_, py_ = (x, y) if raw else (X(x), Y(y))
+    o.append(f'<text x="{px_:.1f}" y="{py_:.1f}" font-size="{size}" fill="{col}" text-anchor="{anchor}"{" font-weight=\"bold\"" if bold else ""}>{t}</text>')
 
 RED, BLK, SIG, ORG, BLU, GRN = "#d62728", "#222", "#e6a700", "#ff7f0e", "#1f77b4", "#2ca02c"
-
-# ---- tile structure ----
-rect(0, 0, SIZE, SIZE, "#f4f4f4", "#555", 2)
-rect(79.4, 0, 80.6, SIZE, "#bbb", "#888"); rect(0, 79.4, SIZE, 80.6, "#bbb", "#888")   # cross rib
-for k in (40, 120):   # wire notches (bottom of walls/rib)
-    for (x, y) in ((k, 0), (k, 80), (k, SIZE)):
-        rect(k - 6, y - 1.5, k + 6, y + 1.5, "white", "#555")
-    for (x, y) in ((0, k), (80, k), (SIZE, k)):
-        rect(x - 1.5, k - 6, x + 1.5, k + 6, "white", "#555")
-for k in (20, 140):   # bolt pads
-    for (x, y) in ((k, 1.2), (k, SIZE - 1.2)):
-        o.append(f'<circle cx="{X(x):.1f}" cy="{Y(y):.1f}" r="{1.7*S:.1f}" fill="white" stroke="#555"/>')
-    for (x, y) in ((1.2, k), (SIZE - 1.2, k)):
-        o.append(f'<circle cx="{X(x):.1f}" cy="{Y(y):.1f}" r="{1.7*S:.1f}" fill="white" stroke="#555"/>')
-
-# ---- MCP23017 pin for each square (same as the schematic) ----
 squares = [f + str(r) for r in range(1, 5) for f in "abcd"]
 pin_of = {sq: ("GPA%d" % i if i < 8 else "GPB%d" % (i - 8)) for i, sq in enumerate(squares)}
-
-# MCP23017 module (CJMCU-2317, 26.7 x 21.5 mm) snapped into its clips, centred in the a1-b2 bay.
-# Drawn last, on top: it sits below the wires that run under it.
-MX0, MX1, MY0, MY1 = 26.65, 53.35, 29.25, 50.75
-
-# ---- wire clips (same list as sensor_tile.py) ----
+MX0, MX1, MY0, MY1 = 26.65, 53.35, 29.25, 50.75                 # MCP23017 module outline
+PIN_X = [40 + (k - 4.5) * 2.54 for k in range(10)]               # k = 0: VCC/GND end (west)
+NORTH = MY1
+def gp_x(sq):
+    i = squares.index(sq); n = i % 8
+    return PIN_X[n + 2] + (0.5 if i >= 8 else -0.5)
 WIRE_CLIPS = ([(40, y, "y") for y in (62, 94, 106, 134)] +
               [(120, y, "y") for y in (26, 54, 66, 94, 106, 134)] +
               [(x, 40, "x") for x in (62, 72, 88, 100, 110)])
-def draw_clips():
-    for cx, cy, al in WIRE_CLIPS:
-        for sd in (-1, 1):
-            off = sd * 2.4
-            if al == "y":
-                rect(cx + off - 0.6, cy - 2, cx + off + 0.6, cy + 2, "#7a4b00", "#3a2400")
-            else:
-                rect(cx - 2, cy + off - 0.6, cx + 2, cy + off + 0.6, "#7a4b00", "#3a2400")
-
-# ---- module pins (CJMCU-2317): 16 inputs on the NORTH long edge (double row),
-#      power / I2C / address on the SOUTH long edge. 10 positions at 2.54 mm along x.
-PIN_X = [40 + (k - 4.5) * 2.54 for k in range(10)]   # k = 0 is the VCC/GND end (west)
-def gp_x(sq):                                       # GPAn/GPBn share position k = n + 2
-    i = squares.index(sq); n = i % 8
-    return PIN_X[n + 2] + (0.5 if i >= 8 else -0.5)
-NORTH = 50.75
-
-# ---- power rails: spines in the x = 40 and x = 120 trunks, link along the y = 40 trunk ----
-line([(38.8, 56), (38.8, 133)], RED, 3); line([(41.2, 56), (41.2, 131)], BLK, 3)     # left, north of module
-line([(38.8, 12), (38.8, 27)], RED, 3); line([(41.2, 10), (41.2, 27)], BLK, 3)       # left, a1/b1 row
-line([(118.8, 12), (118.8, 133)], RED, 3); line([(121.2, 10), (121.2, 131)], BLK, 3)  # right
-line([(118.8, 38.8), (56, 38.8)], RED, 3); line([(121.2, 41.2), (56, 41.2)], BLK, 3)  # link west
-line([(56, 38.8), (56, 56), (38.8, 56)], RED, 3); line([(57.5, 41.2), (57.5, 57.5), (41.2, 57.5), (41.2, 56)], BLK, 3)
-line([(24, 27), (38.8, 27)], RED, 2); line([(24, 27), (24, 56), (38.8, 56)], RED, 2)  # left spines joined round the module
-line([(22.5, 27), (41.2, 27)], BLK, 2); line([(22.5, 27), (22.5, 57.5), (41.2, 57.5)], BLK, 2)
-
-# ---- sensors ----
-mcp_entry = {}
+WAGO_X = {"5V": 99.9, "GND": 120.0, "3V3": 140.1, "SDA": 29.95, "SCL": 50.05}
+WCOL = {"5V": RED, "GND": BLK, "3V3": ORG, "SDA": BLU, "SCL": GRN}
+LEG = {}
 for i, sq in enumerate(squares):
     c, r = i % 4, i // 4
     cx, cy = SQ * (c + 0.5), SQ * (r + 0.5)
-    rect(cx - 2.12, cy - 1.62, cx + 2.12, cy + 1.62, "#333", "#000")
-    ly = cy - 2.4
-    legs = {1: cx - 1.27, 2: cx, 3: cx + 1.27}
-    for k, lx in legs.items():
-        o.append(f'<circle cx="{X(lx):.1f}" cy="{Y(ly):.1f}" r="2.2" fill="{[None, RED, BLK, SIG][k]}" stroke="#000" stroke-width="0.5"/>')
-    text(cx, cy + 5, sq, 14, "#000", bold=True)
-    bx = 40 if cx < 80 else 120
-    line([(legs[1], ly), (legs[1], ly - 3), (bx - 1.2, ly - 3)], RED, 1.6)
-    line([(legs[2], ly), (legs[2], ly - 5), (bx + 1.2, ly - 5)], BLK, 1.6)
-    sy = ly - 7 - 0.8 * c
-    line([(legs[3], ly), (legs[3], sy)], SIG, 1.4)
-    mcp_entry[sq] = (legs[3], sy, cx, cy)
+    LEG[sq] = (cx, cy, cy - 2.4, {1: cx - 1.27, 2: cx, 3: cx + 1.27})
 
-# ---- signals: along the trunks (through the clips), then a short hop to the module's north edge ----
-for sq, (lx, sy, cx, cy) in mcp_entry.items():
-    i = squares.index(sq); tx = gp_x(sq)
-    if cy < 40:                                   # a1, b1: round the module's side, up to the north edge
+def base(title, sub):
+    """tile structure, clips, WAGO slots, sensors and module: same on both panels"""
+    text(X(160), Y(160) - 112, title, 15, anchor="start", bold=True, raw=True)
+    text(X(160), Y(160) - 94, sub, 11, anchor="start", raw=True)
+    rect(0, 0, SIZE, SIZE, "#f4f4f4", "#555", 2)
+    rect(79.4, 0, 80.6, SIZE, "#bbb", "#888"); rect(0, 79.4, SIZE, 80.6, "#bbb", "#888")
+    for k in (40, 120):
+        for (x, y) in ((k, 0), (k, 80), (k, SIZE)):
+            rect(k - 6, y - 1.5, k + 6, y + 1.5, "white", "#555")
+        for (x, y) in ((0, k), (80, k), (SIZE, k)):
+            rect(x - 1.5, k - 6, x + 1.5, k + 6, "white", "#555")
+    for k in (20, 140):
+        for (x, y) in ((k, 1.2), (k, SIZE - 1.2), (1.2, k), (SIZE - 1.2, k)):
+            o.append(f'<circle cx="{X(x):.1f}" cy="{Y(y):.1f}" r="{1.7*S:.1f}" fill="white" stroke="#555"/>')
+    for cx, cy, al in WIRE_CLIPS:
+        for sd in (-1, 1):
+            if al == "y":
+                rect(cx + sd * 2.4 - 0.6, cy - 2, cx + sd * 2.4 + 0.6, cy + 2, "#7a4b00", "#3a2400")
+            else:
+                rect(cx - 2, cy + sd * 2.4 - 0.6, cx + 2, cy + sd * 2.4 + 0.6, "#7a4b00", "#3a2400")
+    for nm, wx in WAGO_X.items():
+        rect(wx - 9.4, 110.7, wx + 9.4, 129.3, "#fff1db", "#c47a00", 1.5)
+        text(wx, 113, f"WAGO {nm}", 10, WCOL[nm], bold=True)
+    rect(MX0, MY0, MX1, MY1, "#cfe8ff", "#1f77b4", 2)
+    for xe in (MX0 - 0.6, MX1 + 0.6):
+        rect(xe - 0.6, 38.5, xe + 0.6, 41.5, "#555", "#000")
+    for xk in PIN_X:
+        for yy in (NORTH - 1.3, NORTH - 3.84, MY0 + 1.3):
+            o.append(f'<circle cx="{X(xk):.1f}" cy="{Y(yy):.1f}" r="1.6" fill="white" stroke="#1f77b4" stroke-width="0.6"/>')
+    text(40, 41, "MCP23017", 12, "#1f77b4", bold=True)
+    text(40, 36.5, "inputs: north edge", 9, "#1f77b4"); text(40, 33, "power / I2C: south edge", 9, "#1f77b4")
+    for sq, (cx, cy, ly, legs) in LEG.items():
+        rect(cx - 2.12, cy - 1.62, cx + 2.12, cy + 1.62, "#333", "#000")
+        text(cx, cy + 5, sq, 14, "#000", bold=True)
+def leg_dots(which):
+    for sq, (cx, cy, ly, legs) in LEG.items():
+        for k, lx in legs.items():
+            col = [None, RED, BLK, SIG][k] if k in which else "#ddd"
+            o.append(f'<circle cx="{X(lx):.1f}" cy="{Y(ly):.1f}" r="2.3" fill="{col}" stroke="#000" stroke-width="0.5"/>')
+
+# ====================================== PANEL A: power ======================================
+OX, OY = PA, PY
+base("A. POWER: 5V + GND chain and the WAGO bus junction",
+     "5V (leg 1) and GND (leg 2) run sensor to sensor: solder the wire in and the wire out onto the same leg.")
+CHAIN = ["d4", "c4", "c3", "d3", "N120_80", "d2", "d1", "c1", "c2", "N80_40",
+         "b2", "b1", "a1", "a2", "N40_80", "a3", "a4", "b4", "b3"]
+COL_SIDE = {"a": -6, "b": 6, "c": -6, "d": -6}
+def hop(s1, s2, notch, wi):
+    cx1, cy1, ly1, l1 = LEG[s1]; cx2, cy2, ly2, l2 = LEG[s2]
+    k = 1 + wi
+    y1, y2 = ly1 - 3 - 2 * wi, ly2 - 3 - 2 * wi
+    if notch == "N120_80":
+        nx = 122 + 1.5 * wi
+        return [(l1[k], ly1), (l1[k], y1), (nx, y1), (nx, y2), (l2[k], y2), (l2[k], ly2)]
+    if notch == "N80_40":
+        ny = 44 + 1.5 * wi
+        return [(l1[k], ly1), (l1[k], ny), (l2[k] + 4 + 1.5 * wi, ny), (l2[k] + 4 + 1.5 * wi, y2), (l2[k], y2), (l2[k], ly2)]
+    if notch == "N40_80":
+        nx = 36 - 1.5 * wi
+        return [(l1[k], ly1), (l1[k], y1), (nx, y1), (nx, y2), (l2[k], y2), (l2[k], ly2)]
+    if cy1 == cy2:
+        return [(l1[k], ly1), (l1[k], y1), (l2[k], y2), (l2[k], ly2)]
+    side = COL_SIDE[s1[0]]
+    vx = cx1 + side + (1.5 * wi if side > 0 else -1.5 * wi)
+    return [(l1[k], ly1), (l1[k], y1), (vx, y1), (vx, y2), (l2[k], y2), (l2[k], ly2)]
+for wi, col in ((0, RED), (1, BLK)):
+    j = 0
+    while j < len(CHAIN) - 1:
+        s1, nxt = CHAIN[j], CHAIN[j + 1]
+        if nxt.startswith("N"):
+            line(hop(s1, CHAIN[j + 2], nxt, wi), col, 2); j += 2
+        else:
+            line(hop(s1, nxt, None, wi), col, 2); j += 1
+# bus in (north-wall notch at x = 120) to each WAGO, and out (east-wall notch at y = 120)
+for j, nm in enumerate(("5V", "GND", "3V3", "SDA", "SCL")):
+    xin, wx, col = 115.5 + 2.2 * j, WAGO_X[nm], WCOL[nm]
+    if nm in ("SDA", "SCL"):           # to the a3-b4 bay through the centre-rib notch at y = 120
+        line([(xin, 170), (xin, 156 - 1.5 * j), (84 + 1.5 * (j - 3), 156 - 1.5 * j), (84 + 1.5 * (j - 3), 124 + 1.5 * (j - 3)), (wx + 3, 124 + 1.5 * (j - 3)), (wx + 3, 129.3)], col, 2)
+        line([(wx - 3, 110.7), (wx - 3, 107 - 1.5 * (j - 3)), (76, 107 - 1.5 * (j - 3)), (76, 116 + 1.5 * (j - 3)), (156 + 1.5 * (j - 3), 116 + 1.5 * (j - 3)), (170, 116 + 1.5 * (j - 3))], col, 1.6, "5,3")
+    else:
+        line([(xin, 170), (xin, 133 + 1.5 * j), (wx + 3, 133 + 1.5 * j), (wx + 3, 129.3)], col, 2)
+        line([(wx - 3, 110.7), (wx - 3, 106 - 1.5 * j), (158 - 1.5 * j, 106 - 1.5 * j), (158 - 1.5 * j, 120 + 1.5 * j), (170, 120 + 1.5 * j)], col, 1.6, "5,3")
+text(120, 174, "BUS IN  (from the Pico / previous tile)", 12, "#000", bold=True)
+o.append(f'<text x="{X(172):.1f}" y="{Y(120):.1f}" font-size="12" font-weight="bold" text-anchor="middle" transform="rotate(-90 {X(172):.1f} {Y(120):.1f})">BUS OUT (dashed, to next tile)</text>')
+# taps: WAGO 5V/GND -> chain start d4; 3V3 -> module VCC; SDA/SCL -> module; GND -> module from b1
+d4x, d4y, d4ly, d4l = LEG["d4"]
+line([(WAGO_X["5V"], 129.3), (WAGO_X["5V"], 131), (d4l[1] - 5, 131), (d4l[1] - 5, d4ly - 3), (d4l[1], d4ly - 3), (d4l[1], d4ly)], RED, 2.6)
+line([(WAGO_X["GND"], 129.3), (WAGO_X["GND"], 130), (d4l[2] - 3.5, 130), (d4l[2] - 3.5, d4ly - 5), (d4l[2], d4ly - 5), (d4l[2], d4ly)], BLK, 2.6)
+line([(WAGO_X["3V3"], 110.7), (WAGO_X["3V3"], 103), (124.5, 103), (124.5, 36), (56.5, 36), (56.5, 24), (PIN_X[9], 24), (PIN_X[9], MY0)], ORG, 2.2)
+line([(WAGO_X["SDA"], 110.7), (WAGO_X["SDA"], 104), (42.5, 104), (42.5, 58.5), (24, 58.5), (24, 25.5), (PIN_X[6], 25.5), (PIN_X[6], MY0)], BLU, 2.2)
+line([(WAGO_X["SCL"], 110.7), (WAGO_X["SCL"], 102.5), (44, 102.5), (44, 57), (25.5, 57), (25.5, 27), (PIN_X[7], 27), (PIN_X[7], MY0)], GRN, 2.2)
+b1x, b1y, b1ly, b1l = LEG["b1"]
+line([(b1l[2], b1ly), (b1l[2], b1ly - 9), (PIN_X[8], b1ly - 9), (PIN_X[8], MY0)], BLK, 2.2)
+leg_dots((1, 2))
+text(d4x + 8, d4ly - 9, "chain START (+ C2 here)", 10, "#c00", anchor="start", bold=True)
+text(LEG["b3"][0] + 8, LEG["b3"][2] - 9, "chain END", 10, "#c00", anchor="start", bold=True)
+text(b1x - 3, b1ly - 12, "module GND from b1's GND leg", 9, "#000", anchor="end")
+
+# ====================================== PANEL B: signals ======================================
+OX, OY = PB_X, PY
+base("B. SIGNALS: one wire from each sensor's leg 3 to the MCP23017",
+     "Each wire goes along a clip trunk, through the notches, to its pin on the module's north edge.")
+for sq, (cx, cy, ly, legs) in LEG.items():
+    i = squares.index(sq); c = i % 4
+    lx = legs[3]; sy = ly - 7 - 0.8 * c; tx = gp_x(sq)
+    if cy < 40:
         side = 20 if cx < 40 else 60
-        pts = [(lx, sy), (side, sy), (side, NORTH + 3 + 0.5 * i), (tx, NORTH + 3 + 0.5 * i), (tx, NORTH)]
-    elif cx < 80 and cy < 80:                     # a2, b2: straight down onto the north edge
-        pts = [(lx, sy), (tx, sy), (tx, NORTH)]
-    elif cx < 80:                                 # a3-b4: into the x = 40 trunk, south to the module
-        tr = 40 + (-0.6 if cx < 40 else 0.6) + 0.25 * (r := i // 4)
-        pts = [(lx, sy), (tr, sy), (tr, NORTH + 4 + 0.4 * (i % 8)), (tx, NORTH + 4 + 0.4 * (i % 8)), (tx, NORTH)]
-    else:                                         # c/d columns: x = 120 trunk, west along y = 40, hop north
-        k = (i // 4) * 2 + (i % 4 - 2)            # 0..7
-        tr = 119.2 + 0.25 * k
-        ty = 39.0 + 0.25 * k
-        pts = [(lx, sy), (tr, sy), (tr, ty), (60 + 0.4 * k, ty), (60 + 0.4 * k, NORTH + 1.5 + 0.3 * k), (tx, NORTH + 1.5 + 0.3 * k), (tx, NORTH)]
-    line(pts, SIG, 1.2)
+        pts = [(lx, ly), (lx, sy), (side, sy), (side, NORTH + 3 + 0.5 * i), (tx, NORTH + 3 + 0.5 * i), (tx, NORTH)]
+    elif cx < 80 and cy < 80:
+        pts = [(lx, ly), (lx, sy), (tx, sy), (tx, NORTH)]
+    elif cx < 80:
+        tr = 40 + (-0.6 if cx < 40 else 0.6) + 0.25 * (i // 4)
+        pts = [(lx, ly), (lx, sy), (tr, sy), (tr, NORTH + 4 + 0.4 * (i % 8)), (tx, NORTH + 4 + 0.4 * (i % 8)), (tx, NORTH)]
+    else:
+        k = (i // 4) * 2 + (i % 4 - 2)
+        tr, ty = 119.2 + 0.25 * k, 39.0 + 0.25 * k
+        pts = [(lx, ly), (lx, sy), (tr, sy), (tr, ty), (60 + 0.4 * k, ty), (60 + 0.4 * k, NORTH + 1.5 + 0.3 * k), (tx, NORTH + 1.5 + 0.3 * k), (tx, NORTH)]
+    line(pts, SIG, 1.6)
+    text(cx + 3.2, cy - 1, pin_of[sq], 10, "#7a5a00", anchor="end", bold=True)
+leg_dots((3,))
 
-# module on top, with its two snap clips, and the wire clips
-draw_clips()
-rect(MX0, MY0, MX1, MY1, "#cfe8ff", "#1f77b4", 2)
-for k, xk in enumerate(PIN_X):                     # pin rows
-    for yy in (NORTH - 1.3, NORTH - 3.84, MY0 + 1.3):
-        o.append(f'<circle cx="{X(xk):.1f}" cy="{Y(yy):.1f}" r="1.6" fill="white" stroke="#1f77b4" stroke-width="0.6"/>')
-for xe in (MX0 - 0.6, MX1 + 0.6):
-    rect(xe - 0.6, 38.5, xe + 0.6, 41.5, "#555", "#000")
-text(40, 42.5, "MCP23017", 12, "#1f77b4", bold=True); text(40, 38.5, "CJMCU-2317  0x20", 9, "#1f77b4")
-text(40, 34.5, "inputs: north edge  power/I2C: south", 8, "#1f77b4")
-
-# ---- bus in: through the outer-wall notch at (40, 0) ----
-line([(38.5, -8), (38.5, 12)], RED, 3); line([(41.5, -8), (41.5, 10)], BLK, 3)
-# south edge single row, from the west end: A2 A1 A0 RESET SO CS SDA SCL GND VCC
-# (it runs the opposite way to the north row, whose west end is VCC/GND, as on the module)
-line([(43.5, -8), (43.5, 4), (PIN_X[9], 4), (PIN_X[9], MY0)], ORG, 2.2)     # VCC (+ RESET, 3V3)
-line([(44.5, -8), (44.5, 6), (PIN_X[6], 6), (PIN_X[6], MY0)], BLU, 2.2)     # SDA
-line([(45.5, -8), (45.5, 8), (PIN_X[7], 8), (PIN_X[7], MY0)], GRN, 2.2)     # SCL
-text(41, -11, "BUS to Pico / next tile: 5V, GND, 3V3, SDA, SCL", 12, "#000", bold=True)
-
-# ---- legend and notes (right column) ----
-lx0, ly0 = M + SIZE * S + 30, M + 10
-def leg(y, col, t, w=4):
-    o.append(f'<line x1="{lx0}" y1="{y}" x2="{lx0+30}" y2="{y}" stroke="{col}" stroke-width="{w}"/>')
-    text(lx0 + 38, y + 4, t, 12, anchor="start", raw=True)
-text(lx0, ly0, "ONE TILE, SEEN FROM UNDERNEATH", 14, anchor="start", bold=True, raw=True)
-text(lx0, ly0 + 18, "(flip the tile over: square a1 is now bottom-RIGHT)", 11, anchor="start", raw=True)
-leg(ly0 + 45, RED, "+5V: sensor leg 1 (VS)")
-leg(ly0 + 65, BLK, "GND: sensor leg 2, MCP GND, A0, A1, A2")
-leg(ly0 + 85, SIG, "signal: sensor leg 3 (OUT) to its MCP pin", 2)
-leg(ly0 + 105, ORG, "+3V3: MCP VCC and RESET")
-leg(ly0 + 125, BLU, "SDA (Pico GP4, pin 6)")
-leg(ly0 + 145, GRN, "SCL (Pico GP5, pin 7)")
-text(lx0, ly0 + 180, "Legs from below (sensor face up):", 12, anchor="start", bold=True, raw=True)
+# ====================================== legend ======================================
+LY = PY + SIZE * S + 40
+def legend_line(x, y, col, t, w=5, dash=None):
+    o.append(f'<line x1="{x}" y1="{y}" x2="{x+30}" y2="{y}" stroke="{col}" stroke-width="{w}"' + (f' stroke-dasharray="{dash}"' if dash else '') + '/>')
+    text(x + 38, y + 4, t, 12, anchor="start", raw=True)
+legend_line(M, LY, RED, "+5V: sensor leg 1")
+legend_line(M, LY + 20, BLK, "GND: sensor leg 2")
+legend_line(M, LY + 40, SIG, "signal: sensor leg 3", 3)
+legend_line(M + 260, LY, ORG, "+3V3 (MCP VCC, RESET, pull-ups)")
+legend_line(M + 260, LY + 20, BLU, "SDA")
+legend_line(M + 260, LY + 40, GRN, "SCL")
+legend_line(M + 260, LY + 60, "#555", "dashed = bus OUT to the next tile", 2, "5,3")
+text(M + 600, LY + 4, "Legs from below (sensor face up):", 12, anchor="start", bold=True, raw=True)
 for k, (col, name) in enumerate(((SIG, "3 OUT"), (BLK, "2 GND"), (RED, "1 VS"))):
-    o.append(f'<circle cx="{lx0 + 20 + 55*k}" cy="{ly0 + 200}" r="7" fill="{col}" stroke="#000"/>')
-    text(lx0 + 20 + 55 * k, ly0 + 222, name, 11, raw=True)
-text(lx0, ly0 + 245, "Mirrored compared with the face view.", 11, anchor="start", raw=True)
-text(lx0, ly0 + 275, "Square to MCP23017 pin:", 12, anchor="start", bold=True, raw=True)
-for r in range(4, 0, -1):
-    row = "   ".join(f"{f}{r}={pin_of[f + str(r)]}" for f in "abcd")
-    text(lx0, ly0 + 295 + 17 * (4 - r), row, 11, anchor="start", raw=True)
-notes = ["Rails: + and GND run down the middle of each bay",
-         "and pass between bays through the notches.",
-         "Signals: one wire per sensor to the MCP23017",
-         "(ribbon cable works well, 4 wires per bay).",
-         "MCP23017 snaps into 2 clips (grey marks), 5 mm",
-         "below the deck. Inputs on its north edge.",
-         "Brown pairs = wire clips: press the bundle in.",
-         "Trunks: x=40, x=120 and y=40, through the notches.",
-         "Pull-ups: 10k from each signal to 3V3, at the MCP end.",
-         "Also: 100 nF across MCP VCC/GND, 10 uF across 5V/GND.",
-         "Check each sensor's legs for shorts before power."]
-for k, n in enumerate(notes):
-    text(lx0, ly0 + 385 + 16 * k, n, 11, anchor="start", raw=True)
-text(M, M + SIZE * S + 80, "Map to scale: 4 px per mm. Grey = tile walls and centre rib, white slots = wire notches, circles = M3 bolt holes.", 11, anchor="start", raw=True)
+    o.append(f'<circle cx="{M + 620 + 60*k}" cy="{LY + 24}" r="8" fill="{col}" stroke="#000"/>')
+    text(M + 620 + 60 * k, LY + 48, name, 11, raw=True)
+text(M + 600, LY + 70, "Mirrored compared with the face view. Square a1 is bottom-RIGHT from below.", 11, anchor="start", raw=True)
+text(M + 1000, LY + 4, "Brown pairs = wire clips (press the bundle in).", 11, anchor="start", raw=True)
+text(M + 1000, LY + 20, "Orange boxes = WAGO 221-413, levers face you.", 11, anchor="start", raw=True)
+text(M + 1000, LY + 36, "Grey marks at the module = its snap clips.", 11, anchor="start", raw=True)
+text(M + 1000, LY + 52, "Map to scale: 4 px per mm.", 11, anchor="start", raw=True)
+
 # ======================================================================================
 # MODULE CLOSE-UP: every connection at the MCP23017, the Pico, the capacitors and the
 # pull-up resistors. Build these connections; the map above shows where the wires run.
 # ======================================================================================
-T0 = M + SIZE * S + 150                     # top of the close-up section
+T0 = PY + SIZE * S + 190                    # top of the close-up section
 Z = 14.0                                    # px per mm in the close-up
 o.append(f'<line x1="{M}" y1="{T0 - 30}" x2="{W - M}" y2="{T0 - 30}" stroke="#999" stroke-width="1"/>')
 text(M, T0 - 8, "MCP23017 CLOSE-UP (seen from underneath, label side facing you): build these connections exactly", 14, anchor="start", bold=True, raw=True)
@@ -219,7 +239,7 @@ text(px(0) - 12, PB + 126, "solders to the same pin", 11, "#7a5a00", anchor="end
 text(px(0) - 12, PB + 142, "as its resistor", 11, "#7a5a00", anchor="end", raw=True)
 rtext(px(0) + 4, yo - 12, "empty", 10, "#c00", bold=True)
 rtext(px(1) + 4, yo - 12, "empty", 10, "#c00", bold=True)
-text(px(0) - 12, yo + 4, "VCC/GND and ITB/ITA pairs: leave empty", 11, "#c00", anchor="end", bold=True, raw=True)
+text(px(0) - 24, yo + 4, "VCC/GND and ITB/ITA pairs: leave empty", 11, "#c00", anchor="end", bold=True, raw=True)
 
 # south edge: power, I2C, address, reset. Short labelled stubs only, so no lines cross:
 # every stub labelled GND joins the GND rail, every 3V3 stub joins 3V3.
@@ -244,36 +264,35 @@ seg([(px(8), ys + 28), (cx1 - 4, ys + 28)], BLK, 1.6); seg([(cx1 + 4, ys + 28), 
 o.append(f'<line x1="{cx1 - 4}" y1="{ys + 18}" x2="{cx1 - 4}" y2="{ys + 38}" stroke="#000" stroke-width="3"/><line x1="{cx1 + 4}" y1="{ys + 18}" x2="{cx1 + 4}" y2="{ys + 38}" stroke="#000" stroke-width="3"/>')
 text(mx0 + mw + 55, ys + 22, "C1 100nF across GND and VCC", 11, anchor="start", bold=True, raw=True)
 text(mx0 + mw + 55, ys + 37, "(either way round)", 11, anchor="start", raw=True)
-for x, t in ((px(6), "SDA"), (px(7), "SCL"), (px(8), "GND"), (px(9), "3V3")):
-    rtext(x + 4, BY + 32, t, 10, "#000", bold=True)
-text(mx0 + mw + 55, BY - 4, "these 4 + the 5V rail = the bus,", 11, anchor="start", raw=True)
-text(mx0 + mw + 55, BY + 11, "out through the bus notch to the Pico", 11, anchor="start", raw=True)
+for x, t in ((px(6), "SDA: from WAGO SDA"), (px(7), "SCL: from WAGO SCL"), (px(8), "GND: from b1 leg 2"), (px(9), "3V3: from WAGO 3V3")):
+    rtext(x + 4, BY + 112, t, 10, "#000", bold=True)
+text(mx0 + mw + 55, BY - 4, "routes: see panel A", 11, anchor="start", raw=True)
 
 # Pico box
 pico_x, pico_y = M, BY + 60
 o.append(f'<rect x="{pico_x}" y="{pico_y}" width="420" height="125" fill="#e9f7e9" stroke="#2ca02c" stroke-width="2"/>')
-text(pico_x + 10, pico_y + 20, "Raspberry Pi Pico (powered by USB)", 13, "#185c18", anchor="start", bold=True, raw=True)
-rows = [(RED, "VBUS     pin 40  ->  +5V rail (every sensor leg 1)"), (BLK, "GND      pin 38  ->  GND rail and MCP GND"),
-        (ORG, "3V3(OUT) pin 36  ->  MCP VCC (3V3 only, never 5V)"), (BLU, "GP4      pin 6   ->  MCP SDA"), (GRN, "GP5      pin 7   ->  MCP SCL")]
+text(pico_x + 10, pico_y + 20, "Pico (on USB) -> the WAGOs' free 'in' slot", 13, "#185c18", anchor="start", bold=True, raw=True)
+rows = [(RED, "VBUS     pin 40  ->  WAGO 5V"), (BLK, "GND      pin 38  ->  WAGO GND"),
+        (ORG, "3V3(OUT) pin 36  ->  WAGO 3V3 (never 5V)"), (BLU, "GP4      pin 6   ->  WAGO SDA"), (GRN, "GP5      pin 7   ->  WAGO SCL")]
 for j, (col, t) in enumerate(rows):
     yy = pico_y + 42 + 18 * j
     o.append(f'<line x1="{pico_x + 10}" y1="{yy - 4}" x2="{pico_x + 34}" y2="{yy - 4}" stroke="{col}" stroke-width="5"/>')
     o.append(f'<text x="{pico_x + 42}" y="{yy}" font-size="12" font-family="monospace">{t}</text>')
 
 # C2 electrolytic on the 5V rail
-c2x, c2y = pico_x + 470, pico_y + 10
+c2x, c2y = mx0 + mw + 90, pico_y - 20
 o.append(f'<line x1="{c2x}" y1="{c2y}" x2="{c2x + 60}" y2="{c2y}" stroke="{RED}" stroke-width="3"/><line x1="{c2x}" y1="{c2y + 60}" x2="{c2x + 60}" y2="{c2y + 60}" stroke="{BLK}" stroke-width="3"/>')
 o.append(f'<rect x="{c2x + 18}" y="{c2y + 12}" width="24" height="36" rx="3" fill="#335" stroke="#000"/><rect x="{c2x + 18}" y="{c2y + 38}" width="24" height="10" fill="#ddd"/>')
 o.append(f'<line x1="{c2x + 30}" y1="{c2y}" x2="{c2x + 30}" y2="{c2y + 12}" stroke="#000" stroke-width="2"/><line x1="{c2x + 30}" y1="{c2y + 48}" x2="{c2x + 30}" y2="{c2y + 60}" stroke="#000" stroke-width="2"/>')
 text(c2x + 70, c2y + 4, "+5V rail", 12, RED, anchor="start", bold=True, raw=True)
-text(c2x + 70, c2y + 24, "C2 10uF electrolytic, anywhere on the tile's rails", 12, anchor="start", raw=True)
+text(c2x + 70, c2y + 24, "C2 10uF electrolytic, on legs 1 and 2 of d4 (chain start)", 12, anchor="start", raw=True)
 text(c2x + 70, c2y + 40, "STRIPE (-) leg to GND. Backwards it can pop.", 12, "#c00", anchor="start", bold=True, raw=True)
 text(c2x + 70, c2y + 64, "GND rail", 12, BLK, anchor="start", bold=True, raw=True)
 
 # safe build order
 steps = ["SAFE BUILD ORDER",
          "1. Before any power, multimeter on continuity: 5V-GND, 3V3-GND and 5V-3V3 must NOT beep. Each sensor: no beep between any two legs.",
-         "2. Wire sensors + 5V/GND rails only, signal wires loose. Power the Pico. Measure each loose signal wire to GND: must NOT read 5 V.",
+         "2. Wire sensors + the 5V/GND chain + WAGOs only, signal wires loose. Power the Pico. Measure each loose signal wire to GND: must NOT read 5 V.",
          "   A 5 V reading means that sensor's legs are wired wrong. Fix it before anything touches the MCP23017.",
          "3. Wire the module's south edge only (3V3, GND, SDA, SCL, RESET, A0-A2, C1). Run the tile test: it must find 0x20, all squares empty.",
          "4. Power off. Add the 16 pull-ups and the signal wires. Run the test again and try every square.",

@@ -16,6 +16,7 @@
 #   notches at the deck side of walls and ribs: wires pass between bays and tiles
 #   wire clips along 3 trunk routes (see WIRE_CLIPS) hold the wiring against the deck
 #   two snap clips in the a1-b2 bay hold the MCP23017 module (CJMCU-2317)
+#   5 WAGO 221-413 holders (rows at y = 120) for the bus junction to the next tile
 import os
 import FreeCAD as App, Part, Mesh, MeshPart
 V = App.Vector
@@ -64,6 +65,17 @@ PCB_T    = 1.6
 ARM_W, ARM_T = 3.0, 1.0       # snap arm width (y) and thickness (x)
 HOOK     = 0.5                # how far the hook reaches over the board edge
 STOP_IN  = 1.0                # stops touch the board only this far in from its edge
+
+# WAGO 221-413 lever connectors (18.8 x 18.6 x 8.4 mm) for the bus junction where a tile
+# joins the next: in from the previous tile, out to the next, one tap into this tile.
+# They hang BELOW the wire layer, levers facing the table so they can be opened from below,
+# in rows along the solid deck band at y = 120 (wire entries face north/south):
+#   row of 3 in the c3-d4 bay (5V, GND, 3V3), row of 2 in the a3-b4 bay (SDA, SCL).
+# Each WAGO sits between two thin walls with a stop (top) and a snap lip (bottom).
+WAGO_W, WAGO_D, WAGO_H = 18.8, 18.6, 8.4
+WAGO_ROWS = [(120.0, 3), (40.0, 2)]       # (row centre x, count), all at y = 120
+WAGO_Z0  = 0.6                            # bottom of the WAGO (lever face), above the table
+WALL_T, WALL_L = 1.0, 5.0                 # wall thickness (x) and length (y, on the 6 mm band)
 
 OUT = os.path.join(os.getcwd(), "board", "case", "models")
 
@@ -123,6 +135,28 @@ def wire_clip(cx, cy, along):
     return parts
 for cx, cy, along in WIRE_CLIPS:
     walls += wire_clip(cx, cy, along)
+def prism_xz(pts_xz, y0, length):
+    pts = [V(x, y0, z) for x, z in pts_xz] + [V(pts_xz[0][0], y0, pts_xz[0][1])]
+    return Part.Face(Part.makePolygon(pts)).extrude(V(0, length, 0))
+def wago_row(cx, n):
+    parts = []
+    pitch = WAGO_W + 0.3 + WALL_T
+    x_first = cx - (n * pitch + WALL_T) / 2        # left face of the first wall
+    y0 = 120.0 - WALL_L / 2
+    zt = WAGO_Z0 + WAGO_H + 0.3                    # WAGO base face (deck side)
+    for w in range(n + 1):
+        xw = x_first + w * pitch                   # this wall spans xw .. xw + WALL_T
+        parts.append(box(xw, y0, WAGO_Z0, WALL_T, WALL_L, deck_z - WAGO_Z0))
+        for face, d in ((xw + WALL_T, 1), (xw, -1)):          # +x face, -x face
+            if (d > 0 and w == n) or (d < 0 and w == 0):
+                continue                                      # outer faces: no WAGO there
+            # stop: flat on the table side at zt, 45 deg slope towards the deck
+            parts.append(prism_xz([(face, zt), (face + d * 1.5, zt), (face, zt + 1.5)], y0, WALL_L))
+            # snap lip: flat towards the deck at WAGO_Z0 + 1.4, sloped towards the table
+            parts.append(prism_xz([(face, WAGO_Z0 + 1.4), (face + d * 0.5, WAGO_Z0 + 1.4), (face, WAGO_Z0)], y0, WALL_L))
+    return parts
+for cx, n in WAGO_ROWS:
+    walls += wago_row(cx, n)
 tile = tile.fuse(walls)
 
 cuts = []

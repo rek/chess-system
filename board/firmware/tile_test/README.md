@@ -12,11 +12,11 @@ MCP23017, the Pico and the capacitors, plus the safe build order.
 
 | From | To |
 |---|---|
-| Pico VBUS (pin 40) | +5V rail: every sensor's leg 1 (VS) |
-| Pico GND (pin 38) | GND rail: every sensor's leg 2, MCP23017 GND, A0, A1, A2 |
-| Pico 3V3(OUT) (pin 36) | MCP23017 VCC and RESET |
-| Pico GP4 (pin 6) | MCP23017 SDA |
-| Pico GP5 (pin 7) | MCP23017 SCL |
+| Pico VBUS (pin 40) | WAGO 5V, then the 5V chain: every sensor's leg 1 (VS) |
+| Pico GND (pin 38) | WAGO GND, then the GND chain: every sensor's leg 2; MCP23017 GND, A0, A1, A2 |
+| Pico 3V3(OUT) (pin 36) | WAGO 3V3, then MCP23017 VCC and RESET, and the 16 pull-ups |
+| Pico GP4 (pin 6) | WAGO SDA, then MCP23017 SDA |
+| Pico GP5 (pin 7) | WAGO SCL, then MCP23017 SCL |
 | Sensor leg 3 (OUT) | MCP23017 pin for its square (below), plus a 10 kΩ to 3V3 |
 
 | Square | a | b | c | d |

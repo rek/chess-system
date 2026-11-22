@@ -102,6 +102,17 @@ off-centre a piece still switches.
 - Under the deck: perimeter walls + one cross rib make 4 open bays (20 mm tall) for wiring,
   the MCP23017 and (on one tile) the Pico. Wire notches (12 × 8 mm) in every wall/rib,
   right under the deck, so wires run flat against it.
+- **5V and GND wiring: one chain, sensor to sensor**, soldered onto the legs themselves
+  (wire in + wire out on the same leg, leg cover over it), so there are no splices. Order:
+  d4 c4 c3 d3 | d2 d1 c1 c2 | b2 b1 a1 a2 | a3 a4 b4 b3, crossing ribs at the notches
+  (120, 80), (80, 40) and (40, 80). The module's GND comes from b1's GND leg.
+- **Bus junction: WAGO 221-413 lever connectors** (in from the previous tile / Pico, out to
+  the next tile, one tap into this tile). 5 holders hang below the wire layer on the
+  y = 120 band, levers facing down: 5V, GND, 3V3 in the c3–d4 bay, SDA, SCL in the a3–b4
+  bay. Each slot has a stop and a 0.5 mm snap lip; if a lip catches an outer lever, trim it.
+  Bus IN through the north-wall notch at x = 120, OUT through the east-wall notch at
+  y = 120. Those meet the next tile's notches when the 4 tiles are rotated round the board
+  centre. The last tile has no OUT, so 2-pin WAGOs do there.
 - Wire clips: 15 pairs of flexible posts on the solid deck bands, forming 3.6 mm channels
   with lips (1 mm gap) that hold a pressed-in bundle. They line 3 trunks: x = 40 (a/b
   columns, rows 3–4, down to the module), x = 120 (c/d columns) and y = 40 (from x = 120
