@@ -29,6 +29,14 @@ Build: 64-square Hall-effect chessboard. LEDs are not included in this build.
 | PCB wire connectors | Optional |
 | Perfboard / prototype PCB | Check |
 
+## Printed parts and hardware
+
+| Qty | Part | Notes | Status |
+|---:|---|---|---|
+| 4 | Sensor tile, 160 × 160 × 20 mm (`case/sensor_tile.py`) | ~106 cm³ (~130 g PLA) each | To print |
+| 1 | Top sheet, 3 mm, single piece, ≥ 320 × 320 mm | Pieces play on this | Have |
+| 8 | M3 × 10 bolt + nut | Join the tiles: 2 per shared edge | To buy |
+
 ## Tools
 Soldering iron and solder, multimeter, PCB fabrication materials (custom sensor boards),
 heat-shrink tubing.

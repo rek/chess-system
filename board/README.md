@@ -17,6 +17,7 @@ stepping stone for this.
 
 ## Folders
 - `firmware/hall_test/`: one-sensor test on the Pico (MicroPython).
+- `case/sensor_tile.py`: FreeCAD script for the sensor holder tile (see below).
 - `tools/magnet_field.py`: field model used to pick the magnet layout.
 - `case/magnet_base.py`: FreeCAD script for the piece magnet bases. Run from the repo root
   with `freecadcmd board/case/magnet_base.py`. Writes STEP (tracked) + STL (local) to
@@ -66,6 +67,22 @@ Testing a single sensor (2026-11-21).
     showed a stronger centre than predicted, so treat it as a comparison between layouts.
 - Every magnet must have the same pole facing down (the SS443R switches on one pole
   only). Skip Halbach arrays (too fiddly).
+
+## Sensor holder (board underside)
+- 8 × 8 squares of 40 mm = 320 × 320 mm. Print bed is 350 mm (~300 mm usable), so the
+  holder is **4 identical tiles of 4 × 4 squares (160 × 160 × 20 mm)**.
+- One tile = 16 sensors = one MCP23017, mounted in the tile's bays. Only the bus crosses
+  between tiles: 5V, 3V3, GND, SDA, SCL.
+- Deck 3 mm with a pocket at every square centre (4.4 × 3.4 mm for the 4.1 × 3.1 × 1.6 mm
+  sensor, 0.15 mm clearance per side). Sensor lies face up, flush with the deck top, so it
+  touches the underside of the 3 mm top sheet. Leads bend straight down through a slot
+  on the pocket's -y side.
+- Under the deck: perimeter walls + one cross rib make 4 open bays (20 mm tall) for wiring,
+  the MCP23017 and (on one tile) the Pico. Wire notches at the bottom of every wall/rib.
+  Electronics live under the board, so no frame is needed.
+- Tiles bolt together with M3 through the walls (2 per side, same on all sides, so any tile
+  fits any corner rotated). The 3 mm sheet rests on top, held by a frame lip or tape.
+- Print upside down (deck on the bed): flat top, no supports.
 
 ## Open questions
 - What should the board do with a move: show it, log it, send it to an app or a chess site?
