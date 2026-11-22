@@ -6,7 +6,7 @@ A custom electronic chessboard, built in steps. Each project has its own folder 
 | Folder | Project | Status |
 |---|---|---|
 | [`clock/`](clock/README.md) | Two-player chess clock on an Arduino Nano | Working; battery power planned |
-| [`board/`](board/README.md) | Electronic chessboard that senses piece moves | Testing one Hall sensor |
+| [`board/`](board/README.md) | Electronic chessboard that senses piece moves | Design: magnets and sensor tile modelled |
 
 ## Layout inside each project
 - `firmware/`: one folder per sketch (Arduino needs the folder name to match the `.ino`).

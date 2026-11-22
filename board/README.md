@@ -17,8 +17,9 @@ stepping stone for this.
 
 ## Folders
 - `firmware/hall_test/`: one-sensor test on the Pico (MicroPython).
-- `case/sensor_tile.py`: FreeCAD script for the sensor holder tile (see below).
 - `tools/magnet_field.py`: field model used to pick the magnet layout.
+- `case/sensor_tile.py`: FreeCAD script for the sensor holder tile (see below). Run from
+  the repo root with `freecadcmd board/case/sensor_tile.py`.
 - `case/magnet_base.py`: FreeCAD script for the piece magnet bases. Run from the repo root
   with `freecadcmd board/case/magnet_base.py`. Writes STEP (tracked) + STL (local) to
   `case/models/`: `magnet_base_9` / `magnet_base_7` (35 mm test puck, 0.6 mm floor, pockets
@@ -26,7 +27,9 @@ stepping stone for this.
   subtract from a piece model).
 
 ## Status
-Testing a single sensor (2026-11-21).
+Design stage (2026-11-22): one sensor tested, magnet layout chosen, piece magnet base and
+sensor holder tile modelled. Next: print a test tile and a test puck, measure how far
+off-centre a piece still switches.
 
 ## Test results
 - 2026-11-21, one SS443R, 6 × 3 mm magnet, LED test (no code): **works**. Switches on one
@@ -81,11 +84,31 @@ Testing a single sensor (2026-11-21).
   the MCP23017 and (on one tile) the Pico. Wire notches at the bottom of every wall/rib.
   Electronics live under the board, so no frame is needed.
 - Tiles bolt together with M3 through the walls (2 per side, same on all sides, so any tile
-  fits any corner rotated). The 3 mm sheet rests on top, held by a frame lip or tape.
-- Print upside down (deck on the bed): flat top, no supports.
+  fits any corner rotated). The 3 mm sheet rests on top. With no frame, fix it with
+  double-sided tape or a few dots of glue, lined up so its squares sit over the sensors
+  (sensor centres are 20 mm in from each tile edge). The sheet must be non-magnetic
+  (wood, MDF, acrylic).
+- Print upside down (deck on the bed): flat top, no supports. Turn on elephant-foot
+  compensation in the slicer, or the first layers squeeze the pocket openings and the
+  sensors won't sit flush.
+- Sensor leads: fit the plastic lead covers below the deck (they won't pass the 1.5 mm
+  slot). Check every sensor for shorts between legs before wiring the bus.
+
+## Electronics
+- MCP23017 addresses: each of the 4 modules needs its own address, set with its A0–A2
+  pads/jumpers: 0x20, 0x21, 0x22, 0x23. Label each tile with its address.
+- I²C: the bus runs through all 4 tiles (~0.5 m). Most MCP23017 modules have their own
+  SDA/SCL pull-ups; 4 in parallel is fine at 100 kHz.
+- Sensor pull-ups: the BOM has 10 kΩ resistors, but the MCP23017's built-in pull-ups
+  (~100 kΩ, to its 3.3 V supply) may be enough and save 64 resistors. Test on one tile.
+- Power: 64 sensors draw a few hundred mA at 5 V. Fine from USB on the Pico's VBUS, but
+  measure it on one tile first. Long-term power source not decided yet.
+- Pieces: every magnet has the same pole down, so the board sees only "piece here / not
+  here", not which piece. Firmware must track pieces from the starting position, and
+  needs another way to choose a promotion piece.
 
 ## Open questions
 - What should the board do with a move: show it, log it, send it to an app or a chess site?
-- Detect only "a piece is here", or also which piece?
-- Board size, and how many sensors to read (64 squares needs multiplexing on either chip).
+- How to pick a promotion piece (a button, or the clock's buttons)?
+- Long-term power: USB only, or a battery like the clock?
 - Does it connect to the clock?
