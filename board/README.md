@@ -99,9 +99,10 @@ off-centre a piece still switches.
   (y = 59–61). Solder the 16 10 kΩ resistors into the module's input holes from its label
   side before clipping it in, bodies lying north past its edge in two layers: outer-row pins
   bent ~1 mm off the board, inner-row pins ~4 mm off (side view on the wiring map). Pushing
-  the module in drops the far legs into the comb's slots, which hold them straight; they
-  stick out north of it, where one bare 3V3 wire is soldered along all 16, with a jumper
-  to the module's VCC. 10 slots cover all 10 pin columns, so it fits even if the module's
+  the module in drops the far legs into the comb's slots, which stop them moving sideways.
+  Past the comb, bend each tip up towards you (lower layer right at the comb, upper layer
+  ~2 mm further, so they don't cross), which locks it; trim level and solder one bare 3V3
+  wire across all 16 tips, with a jumper to the module's VCC. 10 slots cover all 10 pin columns, so it fits even if the module's
   columns are mirrored. Assumes resistor bodies ≤ 2.5 × 6.5 mm (standard ¼ W).
 - Each sensor wire goes into the same module hole as its resistor, from the deck side. If a
   hole won't take both, solder the wire to the resistor leg's tail on the deck side instead.

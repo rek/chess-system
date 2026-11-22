@@ -266,19 +266,21 @@ o.append(f'<rect x="{SX(42):.1f}" y="{SZ(17.6):.1f}" width="{26 * Q:.1f}" height
 o.append(f'<rect x="{SX(42):.1f}" y="{SZ(11):.1f}" width="{8.75 * Q:.1f}" height="{1.6 * Q:.1f}" fill="#cfe8ff" stroke="#1f77b4" stroke-width="1.5"/>')
 o.append(f'<rect x="{SX(59):.1f}" y="{SZ(4):.1f}" width="{2 * Q:.1f}" height="{9 * Q:.1f}" fill="#7a4b00" fill-opacity="0.35" stroke="#3a2400"/>')
 for yh, zl, nm in ((49.45, 10.2, "outer row: 1 mm off"), (46.91, 7.0, "inner row: 4 mm off")):
-    seg([(SX(yh), SZ(13.2)), (SX(yh), SZ(zl)), (SX(65), SZ(zl))], "#777", 2)
+    yb = 64.0 if zl > 9 else 62.2                     # far leg: through the comb, tip bent up towards you
+    seg([(SX(yh), SZ(13.2)), (SX(yh), SZ(zl)), (SX(yb), SZ(zl)), (SX(yb), SZ(2.0))], "#777", 2)
     o.append(f'<rect x="{SX(51.2):.1f}" y="{SZ(zl - 1.25):.1f}" width="{6.5 * Q:.1f}" height="{2.5 * Q:.1f}" rx="6" fill="#f3e2c0" stroke="#000"/>')
-    o.append(f'<circle cx="{SX(63.3):.1f}" cy="{SZ(zl):.1f}" r="4" fill="{ORG}"/>')
-    text(SX(66), SZ(zl) + 4, nm, 11, anchor="start", raw=True)
+    o.append(f'<circle cx="{SX(yb):.1f}" cy="{SZ(2.6):.1f}" r="4" fill="{ORG}"/>')
+    text(SX(65.5), SZ(zl) + 4, nm, 11, anchor="start", raw=True)
 seg([(SX(42), SZ(15.6)), (SX(46.3), SZ(15.6)), (SX(46.91), SZ(12.6))], SIG, 2.4)
 text(SX(42) - 8, SZ(18.8) + 4, "deck", 11, "#555", anchor="end", raw=True)
 text(SX(42) - 8, SZ(11.8) + 4, "module, label up", 11, "#1f77b4", anchor="end", bold=True, raw=True)
 text(SX(42) - 8, SZ(15.6) + 4, "sensor wire", 11, "#7a5a00", anchor="end", raw=True)
 text(SX(60), SZ(4) - 8, "comb", 11, "#7a4b00", anchor="middle", bold=True, raw=True)
-text(SX(63.3), SZ(2) - 6, "3V3 wire", 11, ORG, anchor="middle", bold=True, raw=True)
+text(SX(63.1), SZ(2) - 12, "3V3 wire across the tips", 11, ORG, anchor="middle", bold=True, raw=True)
 text(sx0 - 120, SZ(20) + 26, "Bend each resistor's leg this far from the board before soldering it in.", 11, anchor="start", raw=True)
 text(sx0 - 120, SZ(20) + 42, "Solder the resistors in before clipping the module in. Pushing it in drops", 11, anchor="start", raw=True)
-text(sx0 - 120, SZ(20) + 58, "the far legs into the comb's slots; then solder the 3V3 wire along them.", 11, anchor="start", raw=True)
+text(sx0 - 120, SZ(20) + 58, "the far legs into the comb's slots. Bend each tip up towards you just past the comb:", 11, anchor="start", raw=True)
+text(sx0 - 120, SZ(20) + 74, "lower layer right at the comb, upper layer 2 mm further. Trim level, solder the 3V3 wire across.", 11, anchor="start", raw=True)
 
 # south edge: power, I2C, address, reset. Short labelled stubs only, so no lines cross:
 # every stub labelled GND joins the GND rail, every 3V3 stub joins 3V3.
@@ -334,7 +336,7 @@ steps = ["SAFE BUILD ORDER",
          "2. Wire sensors + the 5V/GND chain + WAGOs only, signal wires loose. Power the Pico. Measure each loose signal wire to GND: must NOT read 5 V.",
          "   A 5 V reading means that sensor's legs are wired wrong. Fix it before anything touches the MCP23017.",
          "3. Wire the module's south edge only (3V3, GND, SDA, SCL, RESET, A0-A2, C1). Run the tile test: it must find 0x20, all squares empty.",
-         "4. Power off. Unclip the module, solder the 16 pull-ups + signal wires, clip it back (legs into the comb), solder the comb's 3V3 wire + VCC jumper. Test every square.",
+         "4. Power off. Unclip the module, solder the 16 pull-ups + signal wires, clip it back (legs into the comb), bend the tips up, solder the 3V3 wire + VCC jumper. Test every square.",
          "Follow the LABELS printed on your module. If it's turned round, the positions here flip; the names don't."]
 for j, t in enumerate(steps):
     text(M, pico_y + 175 + 19 * j, t, 13 if j == 0 else 12, "#c00" if j in (0, 6) else "#000", anchor="start", bold=(j in (0, 6)), raw=True)
