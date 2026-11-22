@@ -47,6 +47,10 @@ Testing a single sensor (2026-11-21).
 - **Chosen layout: 2 × 2 grid of 2-high stacks, holes at 7.0 mm pitch** (centres ±3.5 mm
   from the base centre, holes span 16.1 mm). Safe radius ~9 mm, centre ~100 mT.
   32 pieces × 8 = 256 magnets (300 on hand, 44 spare).
+  - Magnets are embedded mid-print (pause at the pocket top), not glued. Keep the floor
+    under them thin (2–3 layers, ~0.6 mm): it adds to the magnet-to-sensor distance.
+    Magnet edge-to-edge gap 1.0 mm (0.8 mm wall + 0.1 mm clearance each side).
+    Stacks in neighbouring pockets repel, so check every stack's pole before closing it in.
   - Runner-up: pentagon of 5 singles (18.1 mm span, rim too thin in an 18 mm base).
   - Fewer magnets: same 2 × 2 holes with single magnets, safe radius ~8 mm.
   - Field 22 mm away is tiny and the wrong pole, so the neighbouring square won't trigger.
