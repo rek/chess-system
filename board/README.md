@@ -85,7 +85,9 @@ off-centre a piece still switches.
 - Under the deck: perimeter walls + one cross rib make 4 open bays (20 mm tall) for wiring,
   the MCP23017 and (on one tile) the Pico. Wire notches at the bottom of every wall/rib.
   Electronics live under the board, so no frame is needed.
-- Tiles bolt together with M3 through the walls (2 per side, same on all sides, so any tile
+- Walls and rib are 1.2 mm (3 lines). Each bolt hole sits on a full-height 8 mm pad that
+  makes the wall 2.4 mm there.
+- Tiles bolt together with M3 through the walls (2 per side, 20 and 140 mm along it, same on all sides, so any tile
   fits any corner rotated). The 3 mm sheet rests on top. With no frame, fix it with
   double-sided tape or a few dots of glue, lined up so its squares sit over the sensors
   (sensor centres are 20 mm in from each tile edge). The sheet must be non-magnetic

@@ -11,7 +11,7 @@
 #   lead slot beside each pocket: bend the 3 leads straight down through it
 #   perimeter walls + one cross rib, 20 mm deep: 4 open bays underneath for wiring,
 #     the MCP23017 module and (on one tile) the Pico
-#   wall holes: M3 bolts join neighbouring tiles (same holes on all 4 sides, so the tile
+#   wall holes (on 2.4 mm pads, at 20/140 mm): M3 bolts join neighbouring tiles (same holes on all 4 sides, so the tile
 #     works in any corner, rotated)
 #   notches at the bottom of walls and ribs: wires pass between bays and tiles
 import os
@@ -23,8 +23,9 @@ N        = 4              # squares per side per tile
 SIZE     = SQUARE * N     # 160 mm
 HEIGHT   = 20.0           # total tile height (deck + bays)
 DECK     = 2.4            # deck thickness (1.6 mm pocket + 0.8 mm floor)
-WALL     = 2.0            # perimeter wall (two tiles side by side = 4 mm)
-RIB      = 2.0            # cross rib at the tile centre lines
+WALL     = 1.2            # perimeter wall, 3 lines of a 0.4 mm nozzle
+RIB      = 1.2            # cross rib at the tile centre lines
+PAD_W, PAD_T = 8.0, 1.2   # full-height pad inside the wall at each bolt: 2.4 mm there
 
 SENSOR_W, SENSOR_H, SENSOR_T = 4.1, 3.1, 1.6   # measured body: width, height (lead axis), thickness
 CLEAR    = 0.15           # per side, snug fit
@@ -37,6 +38,7 @@ BAND     = 3.0            # solid band along each square edge (6 mm where two sq
 
 BOLT_D   = 3.4            # M3 clearance
 BOLT_Z   = 10.0           # bolt height above the bottom edge
+BOLT_AT  = (SQUARE / 2, SIZE - SQUARE / 2)   # 20 and 140 mm along each side, clear of the notches
 NOTCH_W, NOTCH_H = 12.0, 8.0   # wire notch at the bottom of walls/ribs
 
 OUT = os.path.join(os.getcwd(), "board", "case", "models")
@@ -51,6 +53,11 @@ walls = [box(0, 0, 0, SIZE, WALL, deck_z), box(0, SIZE - WALL, 0, SIZE, WALL, de
          box(0, 0, 0, WALL, SIZE, deck_z), box(SIZE - WALL, 0, 0, WALL, SIZE, deck_z),
          box(SIZE / 2 - RIB / 2, 0, 0, RIB, SIZE, deck_z),
          box(0, SIZE / 2 - RIB / 2, 0, SIZE, RIB, deck_z)]
+for k in BOLT_AT:   # bolt pads, full height so they print without overhangs
+    walls += [box(k - PAD_W / 2, WALL, 0, PAD_W, PAD_T, deck_z),
+              box(k - PAD_W / 2, SIZE - WALL - PAD_T, 0, PAD_W, PAD_T, deck_z),
+              box(WALL, k - PAD_W / 2, 0, PAD_T, PAD_W, deck_z),
+              box(SIZE - WALL - PAD_T, k - PAD_W / 2, 0, PAD_T, PAD_W, deck_z)]
 tile = tile.fuse(walls)
 
 cuts = []
@@ -73,16 +80,17 @@ for i in range(N):
 # wire notches: middle of each wall/rib segment (one per bay side)
 for k in (SIZE / 4, 3 * SIZE / 4):
     for y0 in (-1, SIZE / 2 - RIB / 2 - 1, SIZE - WALL - 1):            # walls/rib along x
-        cuts.append(box(k - NOTCH_W / 2, y0, -1, NOTCH_W, WALL + 2, NOTCH_H + 1))
+        cuts.append(box(k - NOTCH_W / 2, y0, -1, NOTCH_W, max(WALL, RIB) + 2, NOTCH_H + 1))
     for x0 in (-1, SIZE / 2 - RIB / 2 - 1, SIZE - WALL - 1):            # walls/rib along y
-        cuts.append(box(x0, k - NOTCH_W / 2, -1, WALL + 2, NOTCH_W, NOTCH_H + 1))
+        cuts.append(box(x0, k - NOTCH_W / 2, -1, max(WALL, RIB) + 2, NOTCH_W, NOTCH_H + 1))
 
 # M3 bolt holes through the perimeter walls, 2 per side, at the square boundaries
-for k in (SQUARE, SIZE - SQUARE):
-    for y0 in (-1, SIZE - WALL - 1):
-        cuts.append(Part.makeCylinder(BOLT_D / 2, WALL + 2, V(k, y0, BOLT_Z), V(0, 1, 0)))
-    for x0 in (-1, SIZE - WALL - 1):
-        cuts.append(Part.makeCylinder(BOLT_D / 2, WALL + 2, V(x0, k, BOLT_Z), V(1, 0, 0)))
+L = WALL + PAD_T + 2
+for k in BOLT_AT:
+    for y0 in (-1, SIZE - WALL - PAD_T - 1):
+        cuts.append(Part.makeCylinder(BOLT_D / 2, L, V(k, y0, BOLT_Z), V(0, 1, 0)))
+    for x0 in (-1, SIZE - WALL - PAD_T - 1):
+        cuts.append(Part.makeCylinder(BOLT_D / 2, L, V(x0, k, BOLT_Z), V(1, 0, 0)))
 
 tile = tile.cut(Part.makeCompound(cuts)).removeSplitter()
 assert tile.isValid()
