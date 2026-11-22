@@ -28,7 +28,7 @@ RIB      = 1.2            # cross rib at the tile centre lines
 PAD_W, PAD_T = 8.0, 1.2   # full-height pad inside the wall at each bolt: 2.4 mm there
 
 SENSOR_W, SENSOR_H, SENSOR_T = 4.1, 3.1, 1.6   # measured body: width, height (lead axis), thickness
-CLEAR    = 0.15           # per side, snug fit
+CLEAR    = 0.07           # per side; 0.15 printed ~0.1-0.2 mm loose
 SLOT_W, SLOT_D = SENSOR_W + 2 * CLEAR, 1.5     # lead slot, beside the lead edge of the pocket
 # Deck windows: the deck is a lattice, not a solid plate (it was ~70 % of the plastic).
 # Each square keeps a cross of arms through the sensor and a band along its edges;

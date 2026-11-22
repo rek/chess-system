@@ -83,7 +83,8 @@ off-centre a piece still switches.
 - Deck 2.4 mm, a lattice rather than a solid plate: each square keeps a cross of 8 mm arms
   through its sensor and a 3 mm band along its edges, with 4 windows cut out (saves ~40 %
   plastic; the 3 mm sheet spans the windows). A pocket at every square centre
-  (4.4 × 3.4 mm for the 4.1 × 3.1 × 1.6 mm sensor, 0.15 mm clearance per side). Sensor lies face up, flush with the deck top, so it
+  (4.24 × 3.24 mm for the 4.1 × 3.1 × 1.6 mm sensor, 0.07 mm clearance per side;
+  0.15 mm printed ~0.1–0.2 mm loose). Sensor lies face up, flush with the deck top, so it
   touches the underside of the 3 mm top sheet. Leads bend straight down through a slot
   on the pocket's -y side.
 - Under the deck: perimeter walls + one cross rib make 4 open bays (20 mm tall) for wiring,
