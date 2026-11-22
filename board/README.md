@@ -36,8 +36,10 @@ Testing a single sensor (2026-11-21).
 - Several magnets side by side (e.g. a dice-5 pattern) behave like a wider magnet with
   gaps: weaker than one solid disc of the same overall width. Every magnet must have the
   same pole facing down, because the SS443R switches on one pole only.
-- Plan: one wide disc (10–12 mm), stacked 2 high if needed. Skip Halbach arrays (need
-  rotated magnets, too fiddly for a piece base).
+- Bigger magnets aren't an option, so with 8 × (6 × 3 mm) per piece: **2 × 2 grid of 2-high
+  stacks, touching**, all the same pole down, centred in the base. Acts like one
+  12 × 12 × 6 mm block. Tested 2026-11-22: works well. Skip Halbach arrays (need rotated
+  magnets, too fiddly for a piece base).
 
 ## Open questions
 - What should the board do with a move: show it, log it, send it to an app or a chess site?
