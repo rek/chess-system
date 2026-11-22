@@ -27,6 +27,17 @@ Testing a single sensor (2026-11-21).
   to be very close and centred over the sensor. Not yet measured: wood thickness, max height,
   how far off-centre it still switches.
 - Idea: more or bigger magnets per piece so an off-centre piece still registers.
+- 2026-11-22, two 6 × 3 mm magnets stacked (acts as one 6 × 6 mm magnet): **much better
+  reach** than one.
+
+## Magnet choice per piece
+- Stacking adds reach, with diminishing returns once the stack is taller than it is wide.
+- A wider magnet widens the area where an off-centre piece still registers.
+- Several magnets side by side (e.g. a dice-5 pattern) behave like a wider magnet with
+  gaps: weaker than one solid disc of the same overall width. Every magnet must have the
+  same pole facing down, because the SS443R switches on one pole only.
+- Plan: one wide disc (10–12 mm), stacked 2 high if needed. Skip Halbach arrays (need
+  rotated magnets, too fiddly for a piece base).
 
 ## Open questions
 - What should the board do with a move: show it, log it, send it to an app or a chess site?
