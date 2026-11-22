@@ -33,9 +33,8 @@ Testing a single sensor (2026-11-21).
 ## Magnet choice per piece
 - Stacking adds reach, with diminishing returns once the stack is taller than it is wide.
 - A wider magnet widens the area where an off-centre piece still registers.
-- Several magnets side by side (e.g. a dice-5 pattern) behave like a wider magnet with
-  gaps: weaker than one solid disc of the same overall width. Every magnet must have the
-  same pole facing down, because the SS443R switches on one pole only.
+- Several magnets side by side give a weaker peak than one solid disc, but the sensor only
+  needs to pass its trip point, so spreading them can still give a wider switching area.
 - Bigger magnets aren't an option: 8 × (6 × 3 mm) per piece. Model in
   `tools/magnet_field.py`. It counts where the field is above the SS443R trip point
   (typ ~13 mT, worst case 20.5 mT), with the Hall chip 4–5 mm below the magnets
@@ -46,7 +45,8 @@ Testing a single sensor (2026-11-21).
     than touching). A 6 mm gap leaves a dead spot over the centre (~9 mT).
   - Widest option: 8 single magnets in a touching ring (3 × 3 grid, centre empty),
     18 × 18 mm footprint: safe radius ~11 mm, centre ~28–38 mT.
-- Every magnet must have the same pole facing down. Skip Halbach arrays (too fiddly).
+- Every magnet must have the same pole facing down (the SS443R switches on one pole
+  only). Skip Halbach arrays (too fiddly).
 
 ## Open questions
 - What should the board do with a move: show it, log it, send it to an app or a chess site?
