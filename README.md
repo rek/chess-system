@@ -11,4 +11,4 @@ A custom electronic chessboard, built in steps. Each project has its own folder 
 ## Layout inside each project
 - `firmware/`: one folder per sketch (Arduino needs the folder name to match the `.ino`).
 - `power/`, `case/`, `docs/`: schematics, printed parts and design notes.
-- Only `.ino`, `.py` and `.md` files are tracked in git. CAD files (Blender, STL, KiCad) stay local.
+- Tracked in git: `.ino`, `.py`, `.md` and `.step` files. Other CAD files (Blender, STL, KiCad) stay local.

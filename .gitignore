@@ -1,7 +1,9 @@
-# Only the firmware (.ino, .py) and notes are tracked. Case designs (Blender, STL) stay local.
+# Tracked: firmware and scripts (.ino, .py), notes (.md) and CAD exchange files (.step).
+# Blender, KiCad and STL files stay local.
 *
 !*/
 !.gitignore
 !*.md
 !*.ino
 !*.py
+!*.step
