@@ -35,32 +35,29 @@ Testing a single sensor (2026-11-21).
 - A wider magnet widens the area where an off-centre piece still registers.
 - Several magnets side by side give a weaker peak than one solid disc, but the sensor only
   needs to pass its trip point, so spreading them can still give a wider switching area.
-- Bigger magnets aren't an option: 8 × (6 × 3 mm) per piece. Model in
+- Bigger magnets aren't an option, only 6 × 3 mm discs. Model in
   `tools/magnet_field.py`. It counts where the field is above the SS443R trip point
-  (typ ~13 mT, worst case 20.5 mT), with the Hall chip 4–5 mm below the magnets
-  (3 mm board + ~1 mm inside the sensor package).
+  (typ ~13 mT, worst case 20.5 mT).
 - Result: spreading the magnets **widens** the area that switches, up to the point where
   the centre drops below the trip point.
-- Piece bases are 18–19 mm (3D printed, with magnet holes), so the 21 mm hex flower
-  doesn't fit. Holes need 6.2 mm diameter and 0.8 mm printed walls between them
-  (7.0 mm centre-to-centre).
-- **Chosen layout: 2 × 2 grid of 2-high stacks, holes at 7.0 mm pitch** (centres ±3.5 mm
-  from the base centre, holes span 16.1 mm). Safe radius ~9 mm, centre ~100 mT.
-  32 pieces × 8 = 256 magnets (300 on hand, 44 spare).
-  - The gap is set by the base size, not by field strength. A wider gap gives a slightly
-    wider switching area as long as the centre stays above the trip point. Use the widest
-    gap that leaves a ~0.8 mm rim: about 1.2 mm in an 18 mm base, 1.9 mm in a 19 mm base.
-  - Model check: on-axis field matches the textbook cylinder formula (78 mT at 4.5 mm for
-    one 6 × 6 stack). Absolute numbers depend on magnet grade (N35 assumed), the real
-    distance and the sensor's trip point; the bench showed a stronger centre than the
-    model predicts, so treat the model as a comparison between layouts.
-  - Magnets are embedded mid-print (pause at the pocket top), not glued. Keep the floor
-    under them thin (2–3 layers, ~0.6 mm): it adds to the magnet-to-sensor distance.
-    Magnet edge-to-edge gap 1.0 mm (0.8 mm wall + 0.1 mm clearance each side).
-    Stacks in neighbouring pockets repel, so check every stack's pole before closing it in.
-  - Runner-up: pentagon of 5 singles (18.1 mm span, rim too thin in an 18 mm base).
-  - Fewer magnets: same 2 × 2 holes with single magnets, safe radius ~8 mm.
-  - Field 22 mm away is tiny and the wrong pole, so the neighbouring square won't trigger.
+- Piece bases are 35 mm (3D printed, magnets embedded mid-print), squares 40 mm.
+  Up to 9 magnets per piece (300 on hand). Chip assumed 5 mm below the magnets
+  (3 mm board + ~1 mm inside the sensor + ~0.6 mm printed floor).
+- **Chosen layout: 1 centre magnet + ring of 8 at 10 mm radius** (every 45°), all single
+  (not stacked), span 26.2 mm. Safe radius ~12.7 mm, centre ~45 mT.
+  Ring magnets 1.65 mm apart edge to edge; ring to centre magnet 4 mm edge to edge.
+  32 × 9 = 288 magnets (12 spare).
+  - Ring radius 9–10 mm is the sweet spot; wider and the centre gets weak.
+  - Need more spares: 7 singles in a hex flower at 9 mm pitch, safe radius ~10.5 mm,
+    224 magnets (76 spare).
+  - Stacking loses here: 2 × 2 stacks of 2 top out at ~9.5 mm safe radius.
+  - Most-sensitive sensor reach ~15.6 mm, so a piece would need to sit ~24 mm off-centre
+    to trigger the next square's sensor (40 mm away): no crosstalk.
+  - Magnets are embedded mid-print. Keep the floor under them thin (2–3 layers).
+    Neighbouring magnets repel, so check every magnet's pole before closing it in.
+  - Model check: on-axis field matches the textbook cylinder formula. Absolute numbers
+    depend on magnet grade (N35 assumed), distance and the sensor's trip point; the bench
+    showed a stronger centre than predicted, so treat it as a comparison between layouts.
 - Every magnet must have the same pole facing down (the SS443R switches on one pole
   only). Skip Halbach arrays (too fiddly).
 
