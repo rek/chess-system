@@ -15,7 +15,8 @@ Build: 64-square Hall-effect chessboard. LEDs are not included in this build.
 
 | Qty | Part | Notes | Status |
 |---:|---|---|---|
-| 100 | Resistor, 10 kΩ, ¼ W | Pull-ups for the sensor outputs, to 3.3 V (never 5 V) | To buy |
+| 100 | Resistor, 10 kΩ, ¼ W | Sensor output pull-ups to 3.3 V (never 5 V): 64 needed, 16 per tile | To buy |
+| 2 | Resistor, 4.7 kΩ | I²C pull-ups on SDA/SCL, only if the modules don't have them | Optional |
 | 10 | Ceramic capacitor, 100 nF (104) | Decoupling for the MCP23017 modules | To buy |
 | 5 | Electrolytic capacitor, 10 µF, 10 V+ | Bulk decoupling | Optional |
 

@@ -67,12 +67,18 @@ cap = (f'(symbol "chess:CAP" (pin_numbers hide) (pin_names (offset 0.254) hide) 
        f'  (property "Footprint" "" (at 0 0 0) {FH})\n  (property "Datasheet" "" (at 0 0 0) {FH})\n{cap_body}\n'
        f'  (symbol "CAP_1_1" (pin passive line (at 0 3.81 270) (length 3.048) (name "1" {F}) (number "1" {F}))'
        f' (pin passive line (at 0 -3.81 90) (length 3.048) (name "2" {F}) (number "2" {F}))))')
-LIBS += [pico, mcp, hall, cap]
+res_body = ('  (symbol "RES_0_1" (rectangle (start -1.016 2.54) (end 1.016 -2.54) (stroke (width 0.254) (type default)) (fill (type none))))')
+res = (f'(symbol "chess:RES" (pin_numbers hide) (pin_names (offset 0) hide) (exclude_from_sim no) (in_bom yes) (on_board yes)\n'
+       f'  (property "Reference" "R" (at 0 0 0) {FH})\n  (property "Value" "R" (at 0 0 0) {FH})\n'
+       f'  (property "Footprint" "" (at 0 0 0) {FH})\n  (property "Datasheet" "" (at 0 0 0) {FH})\n{res_body}\n'
+       f'  (symbol "RES_1_1" (pin passive line (at 0 3.81 270) (length 1.27) (name "1" {F}) (number "1" {F}))'
+       f' (pin passive line (at 0 -3.81 90) (length 1.27) (name "2" {F}) (number "2" {F}))))')
+LIBS += [pico, mcp, hall, cap, res]
 
-def place_cap(ref, value, x, y, top, bottom):
-    S.append(f'(symbol (lib_id "chess:CAP") (at {x} {y} 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "{U()}")\n'
+def place_cap(ref, value, x, y, top, bottom, lib="CAP", show_value=True):
+    S.append(f'(symbol (lib_id "chess:{lib}") (at {x} {y} 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "{U()}")\n'
              f'  (property "Reference" "{ref}" (at {x + 3.81} {y - 1.27} 0) (effects (font (size 1.27 1.27)) (justify left)))\n'
-             f'  (property "Value" "{value}" (at {x + 3.81} {y + 1.27} 0) (effects (font (size 1.27 1.27)) (justify left)))\n'
+             f'  (property "Value" "{value}" (at {x + 3.81} {y + 1.27} 0) (effects (font (size 1.27 1.27)) (justify left){"" if show_value else " hide"}))\n'
              f'  (property "Footprint" "" (at {x} {y} 0) {FH})\n  (property "Datasheet" "" (at {x} {y} 0) {FH})\n'
              f'  (pin "1" (uuid "{U()}")) (pin "2" (uuid "{U()}"))\n  (instances (project "tile" (path "/{ROOT}" (reference "{ref}") (unit 1)))))')
     for py, net, d in ((y - 3.81, top, -5.08), (y + 3.81, bottom, 5.08)):
@@ -87,8 +93,14 @@ place("MCP23017", mcp_p, "U2", "MCP23017 module, address 0x20", 127.0, 88.9,
        "9": None, "10": None,
        **{str(11 + i): f"SQ_{'abcd'[i % 4]}{1 + i // 4}" for i in range(8)},
        **{str(19 + i): f"SQ_{'abcd'[i % 4]}{3 + i // 4}" for i in range(8)}}, 26.67)
-place_cap("C1", "100nF (at the MCP23017)", 99.06, 132.08, "+3V3", "GND")
-place_cap("C2", "10uF (5V rail, on the tile)", 50.8, 132.08, "+5V", "GND")
+place_cap("C1", "100nF (at the MCP23017)", 99.06, 121.92, "+3V3", "GND")
+place_cap("C2", "10uF (5V rail, on the tile)", 50.8, 121.92, "+5V", "GND")
+
+# sensor pull-ups: 10k from every sensor output to +3V3 (fit them at the MCP23017 end)
+for i in range(16):
+    sq = f"{'abcd'[i % 4]}{1 + i // 4}"
+    place_cap(f"R{i + 1}", "10k", 101.6 + 7.62 * (i % 8), 139.7 + 25.4 * (i // 8), "+3V3", f"SQ_{sq}", lib="RES", show_value=False)
+text("R1-R16: 10k pull-ups, one per sensor output, to +3V3 (never +5V)", 99.06, 177.8)
 
 # sensors: 4 x 4 grid laid out like the squares (row 4 at the top)
 for r in range(4):
@@ -103,8 +115,9 @@ text("Wires with the same label are connected (e.g. every +5V, every GND, SQ_a1 
 notes = [
  "1. Power: Pico on USB. VBUS (pin 40) = +5V for the sensors. 3V3(OUT) (pin 36) = +3V3 for the MCP23017. All GNDs together.",
  "2. Sensor legs, printed face toward you, legs down: 1 VS (+5V), 2 GND, 3 OUT. Seen from UNDER the tile (where you solder) the order is mirrored.",
- "3. Sensor outputs only pull LOW. Pull-ups go to +3V3, never +5V. The test firmware turns on the MCP23017's built-in pull-ups (~100k).",
- "   If readings flicker, add a 10k from each SQ_ net to +3V3.",
+ "3. Sensor outputs only pull LOW, so each needs a pull-up (R1-R16, 10k to +3V3, never +5V). The MCP23017's built-in ~100k pull-ups",
+ "   are too weak to rely on: the sensor's allowed output leakage could drag a 100k line below the chip's HIGH threshold.",
+ "   I2C: the module may already have SDA/SCL pull-ups. If the test can't find 0x20, add 4.7k from SDA and from SCL to +3V3.",
  "4. MCP23017 RESET must be tied to +3V3 (floating = random resets). A0, A1, A2 to GND = address 0x20 (next tiles: 0x21, 0x22, 0x23).",
  "5. GPA7 and GPB7 (squares d2 and d4): Microchip's datasheet rev D says these are output-only, because an input changing during",
  "   an I2C read can corrupt SDA. Used as inputs here for the test; the firmware reads twice and compares. See board/README.md.",
@@ -112,7 +125,7 @@ notes = [
  "7. Between tiles only 5 wires: +5V, +3V3, GND, SDA, SCL.",
 ]
 for i, n in enumerate(notes):
-    text(n, 25.4, 165.1 + 5.08 * i)
+    text(n, 25.4, 190.5 + 5.08 * i)
 
 doc = [f'(kicad_sch (version 20231120) (generator "eeschema") (generator_version "8.0")',
        f'(uuid "{ROOT}") (paper "A3")',

@@ -128,8 +128,12 @@ off-centre a piece still switches.
   pads/jumpers: 0x20, 0x21, 0x22, 0x23. Label each tile with its address.
 - I²C: the bus runs through all 4 tiles (~0.5 m). Most MCP23017 modules have their own
   SDA/SCL pull-ups; 4 in parallel is fine at 100 kHz.
-- Sensor pull-ups: the BOM has 10 kΩ resistors, but the MCP23017's built-in pull-ups
-  (~100 kΩ, to its 3.3 V supply) may be enough and save 64 resistors. Test on one tile.
+- Sensor pull-ups: **10 kΩ from every sensor output to 3.3 V** (R1–R16 per tile, 64 in
+  all), soldered at the MCP23017 end. The MCP23017's built-in ~100 kΩ pull-ups are too weak
+  to rely on: the sensor's allowed output leakage could drag a 100 kΩ line below the chip's
+  HIGH threshold. Never pull up to 5 V.
+- I²C pull-ups: the module may already have them on SDA/SCL. If the tile test can't find
+  0x20, add 4.7 kΩ from SDA and from SCL to 3.3 V (once for the whole bus).
 - Power: 64 sensors draw a few hundred mA at 5 V. Fine from USB on the Pico's VBUS, but
   measure it on one tile first. Long-term power source not decided yet.
 - Pieces: every magnet has the same pole down, so the board sees only "piece here / not

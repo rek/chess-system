@@ -141,6 +141,7 @@ notes = ["Rails: + and GND run down the middle of each bay",
          "(ribbon cable works well, 4 wires per bay).",
          "MCP23017 snaps into 2 clips (dark marks), 5 mm",
          "below the deck; wires can run under it.",
+         "Pull-ups: 10k from each signal to 3V3, at the MCP end.",
          "Also: 100 nF across MCP VCC/GND, 10 uF across 5V/GND.",
          "Check each sensor's legs for shorts before power."]
 for k, n in enumerate(notes):

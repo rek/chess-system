@@ -21,7 +21,7 @@ if ADDR not in found:
     raise SystemExit("MCP23017 not found at 0x20: check VCC, GND, SDA/SCL, RESET to 3V3, A0-A2 to GND")
 
 i2c.writeto_mem(ADDR, IODIRA, b"\xff\xff")   # all 16 pins inputs (the default, set anyway)
-i2c.writeto_mem(ADDR, GPPUA, b"\xff\xff")    # built-in pull-ups on (~100k to 3.3 V)
+i2c.writeto_mem(ADDR, GPPUA, b"\xff\xff")    # built-in ~100k pull-ups on too (backup to the 10k resistors)
 
 # bit i of the 16-bit value (GPA = bits 0-7, GPB = bits 8-15) -> square
 SQUARES = [f + str(r) for r in range(1, 5) for f in "abcd"]   # a1 b1 c1 d1 a2 ... d4
