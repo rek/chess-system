@@ -37,7 +37,7 @@ NORTH = MY1
 def gp_x(sq):
     i = squares.index(sq); n = i % 8
     return PIN_X[n + 2] + (0.5 if i >= 8 else -0.5)
-WIRE_CLIPS = ([(40, y, "y") for y in (62, 94, 106, 134)] +
+WIRE_CLIPS = ([(40, y, "y") for y in (72, 94, 106, 134)] +
               [(120, y, "y") for y in (26, 54, 66, 94, 106, 134)] +
               [(x, 40, "x") for x in (62, 72, 88, 100, 110)])
 WAGO_X = {"5V": 99.9, "GND": 120.0, "3V3": 140.1, "SDA": 29.95, "SCL": 50.05}
@@ -77,6 +77,11 @@ def base(title, sub):
     for xk in PIN_X:
         for yy in (NORTH - 1.3, NORTH - 3.84, MY0 + 1.3):
             o.append(f'<circle cx="{X(xk):.1f}" cy="{Y(yy):.1f}" r="1.6" fill="white" stroke="#1f77b4" stroke-width="0.6"/>')
+    for xk in PIN_X[2:]:                                          # pull-ups, lying north of the module
+        rect(xk - 1.2, 51.2, xk + 1.2, 57.7, "#f3e2c0", "#8a6d2b", 0.8)
+    rect(24.5, 59, 55.5, 61, "#7a4b00", "#3a2400")               # pull-up comb
+    o.append(f'<line x1="{X(28.5):.1f}" y1="{Y(63):.1f}" x2="{X(52.5):.1f}" y2="{Y(63):.1f}" stroke="{ORG}" stroke-width="2.5"/>')
+    text(40, 65.5, "pull-up comb + 3V3 wire", 9, "#7a4b00", bold=True)
     text(40, 41, "MCP23017", 12, "#1f77b4", bold=True)
     text(40, 36.5, "inputs: north edge", 9, "#1f77b4"); text(40, 33, "power / I2C: south edge", 9, "#1f77b4")
     for sq, (cx, cy, ly, legs) in LEG.items():
@@ -126,19 +131,25 @@ for j, nm in enumerate(("5V", "GND", "3V3", "SDA", "SCL")):
     xin, wx, col = 115.5 + 2.2 * j, WAGO_X[nm], WCOL[nm]
     if nm in ("SDA", "SCL"):           # to the a3-b4 bay through the centre-rib notch at y = 120
         line([(xin, 170), (xin, 156 - 1.5 * j), (84 + 1.5 * (j - 3), 156 - 1.5 * j), (84 + 1.5 * (j - 3), 124 + 1.5 * (j - 3)), (wx + 3, 124 + 1.5 * (j - 3)), (wx + 3, 129.3)], col, 2)
-        line([(wx - 3, 110.7), (wx - 3, 107 - 1.5 * (j - 3)), (76, 107 - 1.5 * (j - 3)), (76, 116 + 1.5 * (j - 3)), (156 + 1.5 * (j - 3), 116 + 1.5 * (j - 3)), (170, 116 + 1.5 * (j - 3))], col, 1.6, "5,3")
+        line([(wx - 3, 129.3), (wx - 3, 107 - 1.5 * (j - 3)), (76, 107 - 1.5 * (j - 3)), (76, 116 + 1.5 * (j - 3)), (156 + 1.5 * (j - 3), 116 + 1.5 * (j - 3)), (170, 116 + 1.5 * (j - 3))], col, 1.6, "5,3")
     else:
         line([(xin, 170), (xin, 133 + 1.5 * j), (wx + 3, 133 + 1.5 * j), (wx + 3, 129.3)], col, 2)
-        line([(wx - 3, 110.7), (wx - 3, 106 - 1.5 * j), (158 - 1.5 * j, 106 - 1.5 * j), (158 - 1.5 * j, 120 + 1.5 * j), (170, 120 + 1.5 * j)], col, 1.6, "5,3")
+        line([(wx - 3, 129.3), (wx - 3, 106 - 1.5 * j), (158 - 1.5 * j, 106 - 1.5 * j), (158 - 1.5 * j, 120 + 1.5 * j), (170, 120 + 1.5 * j)], col, 1.6, "5,3")
 text(120, 174, "BUS IN  (from the Pico / previous tile)", 12, "#000", bold=True)
 o.append(f'<text x="{X(172):.1f}" y="{Y(120):.1f}" font-size="12" font-weight="bold" text-anchor="middle" transform="rotate(-90 {X(172):.1f} {Y(120):.1f})">BUS OUT (dashed, to next tile)</text>')
 # taps: WAGO 5V/GND -> chain start d4; 3V3 -> module VCC; SDA/SCL -> module; GND -> module from b1
 d4x, d4y, d4ly, d4l = LEG["d4"]
 line([(WAGO_X["5V"], 129.3), (WAGO_X["5V"], 131), (d4l[1] - 5, 131), (d4l[1] - 5, d4ly - 3), (d4l[1], d4ly - 3), (d4l[1], d4ly)], RED, 2.6)
 line([(WAGO_X["GND"], 129.3), (WAGO_X["GND"], 130), (d4l[2] - 3.5, 130), (d4l[2] - 3.5, d4ly - 5), (d4l[2], d4ly - 5), (d4l[2], d4ly)], BLK, 2.6)
-line([(WAGO_X["3V3"], 110.7), (WAGO_X["3V3"], 103), (124.5, 103), (124.5, 36), (56.5, 36), (56.5, 24), (PIN_X[9], 24), (PIN_X[9], MY0)], ORG, 2.2)
-line([(WAGO_X["SDA"], 110.7), (WAGO_X["SDA"], 104), (42.5, 104), (42.5, 58.5), (24, 58.5), (24, 25.5), (PIN_X[6], 25.5), (PIN_X[6], MY0)], BLU, 2.2)
-line([(WAGO_X["SCL"], 110.7), (WAGO_X["SCL"], 102.5), (44, 102.5), (44, 57), (25.5, 57), (25.5, 27), (PIN_X[7], 27), (PIN_X[7], MY0)], GRN, 2.2)
+line([(WAGO_X["3V3"], 129.3), (WAGO_X["3V3"], 103), (124.5, 103), (124.5, 36), (56.5, 36), (56.5, 24), (PIN_X[9], 24), (PIN_X[9], MY0)], ORG, 2.2)
+line([(WAGO_X["SDA"], 129.3), (WAGO_X["SDA"], 104), (42.5, 104), (42.5, 58.5), (24, 58.5), (24, 25.5), (PIN_X[6], 25.5), (PIN_X[6], MY0)], BLU, 2.2)
+line([(WAGO_X["SCL"], 129.3), (WAGO_X["SCL"], 102.5), (44, 102.5), (44, 57), (25.5, 57), (25.5, 27), (PIN_X[7], 27), (PIN_X[7], MY0)], GRN, 2.2)
+for nm, wx in WAGO_X.items():                 # entry dots: every wire enters the north face
+    for dx in (-3, 0, 3):
+        o.append(f'<circle cx="{X(wx + dx):.1f}" cy="{Y(129.3):.1f}" r="3" fill="#c47a00"/>')
+# 3V3 jumper: module VCC up to the pull-up comb's 3V3 wire
+line([(PIN_X[9], MY0), (PIN_X[9], 28), (55.8, 28), (55.8, 63), (52.5, 63)], ORG, 2.2)
+text(57.5, 45, "VCC to comb 3V3", 8, ORG, anchor="end", bold=True)
 b1x, b1y, b1ly, b1l = LEG["b1"]
 line([(b1l[2], b1ly), (b1l[2], b1ly - 9), (PIN_X[8], b1ly - 9), (PIN_X[8], MY0)], BLK, 2.2)
 leg_dots((1, 2))
@@ -187,9 +198,10 @@ for k, (col, name) in enumerate(((SIG, "3 OUT"), (BLK, "2 GND"), (RED, "1 VS")))
     text(M + 620 + 60 * k, LY + 48, name, 11, raw=True)
 text(M + 600, LY + 70, "Mirrored compared with the face view. Square a1 is bottom-RIGHT from below.", 11, anchor="start", raw=True)
 text(M + 1000, LY + 4, "Brown pairs = wire clips (press the bundle in).", 11, anchor="start", raw=True)
-text(M + 1000, LY + 20, "Orange boxes = WAGO 221-413, levers face you.", 11, anchor="start", raw=True)
+text(M + 1000, LY + 20, "Orange boxes = WAGO 221-413, levers face you, slots (dots) face north.", 11, anchor="start", raw=True)
 text(M + 1000, LY + 36, "Grey marks at the module = its snap clips.", 11, anchor="start", raw=True)
-text(M + 1000, LY + 52, "Map to scale: 4 px per mm.", 11, anchor="start", raw=True)
+text(M + 1000, LY + 52, "Lines across a WAGO pass over it (between it and the deck).", 11, anchor="start", raw=True)
+text(M + 1000, LY + 68, "Map to scale: 4 px per mm.", 11, anchor="start", raw=True)
 
 # ======================================================================================
 # MODULE CLOSE-UP: every connection at the MCP23017, the Pico, the capacitors and the
@@ -227,19 +239,46 @@ for k in range(2, 10):
     for dx, row_y, port in ((-9, yo, "A"), (9, yi, "B")):
         x = px(k) + dx
         sq = squares[n] if port == "A" else squares[8 + n]
-        seg([(x, PB), (x, PB + 10)], ORG, 1.6)
-        o.append(f'<rect x="{x - 4:.1f}" y="{PB + 10:.1f}" width="8" height="26" fill="#f3e2c0" stroke="#000" stroke-width="1"/>')
-        seg([(x, PB + 36), (x, row_y - 7)], SIG, 1.8)
+        seg([(x, PB - 4), (x, PB + 34)], "#777", 1.4)
+        o.append(f'<rect x="{x - 4:.1f}" y="{PB + 34:.1f}" width="8" height="32" fill="#f3e2c0" stroke="#000" stroke-width="1"/>')
+        seg([(x, PB + 66), (x, row_y - 7)], "#777", 1.4)
         rtext(x + 5, my0 - 12, f"{sq} = GP{port}{n}", 10, "#7a5a00", bold=True)
-text(px(2) - 26, PB + 4, "3V3 pull-up bus", 12, ORG, anchor="end", bold=True, raw=True)
-text(px(2) - 26, PB + 28, "R1-R16: 10k each", 12, "#000", anchor="end", bold=True, raw=True)
-text(px(2) - 26, PB + 44, "(one per input pin)", 11, "#000", anchor="end", raw=True)
-text(px(0) - 12, PB + 110, "sensor wire for each square", 12, "#7a5a00", anchor="end", bold=True, raw=True)
-text(px(0) - 12, PB + 126, "solders to the same pin", 11, "#7a5a00", anchor="end", raw=True)
-text(px(0) - 12, PB + 142, "as its resistor", 11, "#7a5a00", anchor="end", raw=True)
+o.append(f'<rect x="{px(0) - 16:.1f}" y="{PB + 10:.1f}" width="{px(9) - px(0) + 32:.1f}" height="14" fill="#7a4b00" stroke="#3a2400"/>')
+for k in range(10):
+    o.append(f'<rect x="{px(k) - 9 - 3:.1f}" y="{PB + 10:.1f}" width="24" height="9" fill="#fff" stroke="#3a2400" stroke-width="0.6"/>')
+text(px(0) - 26, PB + 4, "bare 3V3 wire soldered along the legs", 12, ORG, anchor="end", bold=True, raw=True)
+text(px(0) - 26, PB + 22, "pull-up comb (part of the tile)", 12, "#7a4b00", anchor="end", bold=True, raw=True)
+text(px(0) - 26, PB + 50, "R1-R16: 10k each, one per input pin", 12, "#000", anchor="end", bold=True, raw=True)
+text(px(0) - 26, PB + 66, "bend them as in the side view", 11, "#000", anchor="end", raw=True)
+text(px(0) - 12, PB + 110, "sensor wire for each square goes into", 12, "#7a5a00", anchor="end", bold=True, raw=True)
+text(px(0) - 12, PB + 126, "the same hole as its resistor, from", 11, "#7a5a00", anchor="end", raw=True)
+text(px(0) - 12, PB + 142, "the other side (deck side)", 11, "#7a5a00", anchor="end", raw=True)
 rtext(px(0) + 4, yo - 12, "empty", 10, "#c00", bold=True)
 rtext(px(1) + 4, yo - 12, "empty", 10, "#c00", bold=True)
 text(px(0) - 24, yo + 4, "VCC/GND and ITB/ITA pairs: leave empty", 11, "#c00", anchor="end", bold=True, raw=True)
+
+# side view of the pull-ups (tile upside down on the bench: deck at the bottom)
+Q, sx0, sy0 = 13.0, mx0 + mw + 200, T0 + 60
+SX = lambda y: sx0 + (y - 42) * Q
+SZ = lambda z: sy0 + z * Q
+text(sx0 - 120, sy0 - 34, "SIDE VIEW of the pull-ups, from the east (tile upside down)", 13, anchor="start", bold=True, raw=True)
+o.append(f'<rect x="{SX(42):.1f}" y="{SZ(17.6):.1f}" width="{26 * Q:.1f}" height="{2.4 * Q:.1f}" fill="#ccc" stroke="#555"/>')
+o.append(f'<rect x="{SX(42):.1f}" y="{SZ(11):.1f}" width="{8.75 * Q:.1f}" height="{1.6 * Q:.1f}" fill="#cfe8ff" stroke="#1f77b4" stroke-width="1.5"/>')
+o.append(f'<rect x="{SX(59):.1f}" y="{SZ(4):.1f}" width="{2 * Q:.1f}" height="{9 * Q:.1f}" fill="#7a4b00" fill-opacity="0.35" stroke="#3a2400"/>')
+for yh, zl, nm in ((49.45, 10.2, "outer row: 1 mm off"), (46.91, 7.0, "inner row: 4 mm off")):
+    seg([(SX(yh), SZ(13.2)), (SX(yh), SZ(zl)), (SX(65), SZ(zl))], "#777", 2)
+    o.append(f'<rect x="{SX(51.2):.1f}" y="{SZ(zl - 1.25):.1f}" width="{6.5 * Q:.1f}" height="{2.5 * Q:.1f}" rx="6" fill="#f3e2c0" stroke="#000"/>')
+    o.append(f'<circle cx="{SX(63.3):.1f}" cy="{SZ(zl):.1f}" r="4" fill="{ORG}"/>')
+    text(SX(66), SZ(zl) + 4, nm, 11, anchor="start", raw=True)
+seg([(SX(42), SZ(15.6)), (SX(46.3), SZ(15.6)), (SX(46.91), SZ(12.6))], SIG, 2.4)
+text(SX(42) - 8, SZ(18.8) + 4, "deck", 11, "#555", anchor="end", raw=True)
+text(SX(42) - 8, SZ(11.8) + 4, "module, label up", 11, "#1f77b4", anchor="end", bold=True, raw=True)
+text(SX(42) - 8, SZ(15.6) + 4, "sensor wire", 11, "#7a5a00", anchor="end", raw=True)
+text(SX(60), SZ(4) - 8, "comb", 11, "#7a4b00", anchor="middle", bold=True, raw=True)
+text(SX(63.3), SZ(2) - 6, "3V3 wire", 11, ORG, anchor="middle", bold=True, raw=True)
+text(sx0 - 120, SZ(20) + 26, "Bend each resistor's leg this far from the board before soldering it in.", 11, anchor="start", raw=True)
+text(sx0 - 120, SZ(20) + 42, "Solder the resistors in before clipping the module in. Pushing it in drops", 11, anchor="start", raw=True)
+text(sx0 - 120, SZ(20) + 58, "the far legs into the comb's slots; then solder the 3V3 wire along them.", 11, anchor="start", raw=True)
 
 # south edge: power, I2C, address, reset. Short labelled stubs only, so no lines cross:
 # every stub labelled GND joins the GND rail, every 3V3 stub joins 3V3.
@@ -295,7 +334,7 @@ steps = ["SAFE BUILD ORDER",
          "2. Wire sensors + the 5V/GND chain + WAGOs only, signal wires loose. Power the Pico. Measure each loose signal wire to GND: must NOT read 5 V.",
          "   A 5 V reading means that sensor's legs are wired wrong. Fix it before anything touches the MCP23017.",
          "3. Wire the module's south edge only (3V3, GND, SDA, SCL, RESET, A0-A2, C1). Run the tile test: it must find 0x20, all squares empty.",
-         "4. Power off. Add the 16 pull-ups and the signal wires. Run the test again and try every square.",
+         "4. Power off. Unclip the module, solder the 16 pull-ups + signal wires, clip it back (legs into the comb), solder the comb's 3V3 wire + VCC jumper. Test every square.",
          "Follow the LABELS printed on your module. If it's turned round, the positions here flip; the names don't."]
 for j, t in enumerate(steps):
     text(M, pico_y + 175 + 19 * j, t, 13 if j == 0 else 12, "#c00" if j in (0, 6) else "#000", anchor="start", bold=(j in (0, 6)), raw=True)

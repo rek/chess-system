@@ -1,7 +1,7 @@
 # Sensor holder tile for the board underside (FreeCAD script).
 # Run from the repo root:  freecadcmd board/case/sensor_tile.py
 # Writes board/case/models/sensor_tile.step (+ .stl). Print 4, all identical.
-# Also writes sensor_tile_coupon: one corner square, a quick print to check the sensor fit.
+# Also writes 3 test coupons (sensor fit, module clips + pull-up comb, WAGO holders).
 #
 # One tile = 4 x 4 squares (160 x 160 mm) = 16 SS443R sensors = one MCP23017.
 # Print it upside down (deck on the bed): the deck top comes out flat for the 3 mm sheet,
@@ -17,6 +17,7 @@
 #   wire clips along 3 trunk routes (see WIRE_CLIPS) hold the wiring against the deck
 #   two snap clips in the a1-b2 bay hold the MCP23017 module (CJMCU-2317)
 #   5 WAGO 221-413 holders (rows at y = 120) for the bus junction to the next tile
+#   a comb north of the module that holds the far legs of the 16 pull-up resistors
 import os
 import FreeCAD as App, Part, Mesh, MeshPart
 V = App.Vector
@@ -50,7 +51,7 @@ NOTCH_W, NOTCH_H = 12.0, 8.0   # wire notch in walls/ribs, right under the deck 
 #   y = 80 rib), y = 40 (from x = 120 through the x = 80 rib towards the module).
 CLIP_G, CLIP_PW, CLIP_L, CLIP_H = 3.6, 1.2, 4.0, 9.0   # channel width, post thickness, length, depth
 CLIP_LIP = 1.3                                          # lips leave a 1.0 mm gap: wires snap past
-WIRE_CLIPS = ([(40, y, "y") for y in (62, 94, 106, 134)] +
+WIRE_CLIPS = ([(40, y, "y") for y in (72, 94, 106, 134)] +
               [(120, y, "y") for y in (26, 54, 66, 94, 106, 134)] +
               [(x, 40, "x") for x in (62, 72, 88, 100, 110)])
 
@@ -76,6 +77,20 @@ WAGO_W, WAGO_D, WAGO_H = 18.8, 18.6, 8.4
 WAGO_ROWS = [(120.0, 3), (40.0, 2)]       # (row centre x, count), all at y = 120
 WAGO_Z0  = 0.6                            # bottom of the WAGO (lever face), above the table
 WALL_T, WALL_L = 1.0, 5.0                 # wall thickness (x) and length (y, on the 6 mm band)
+
+# Pull-up comb. The 16 10k resistors are soldered into the module's input holes from its
+# label side before it clips in, bodies lying north past its north edge in 2 layers
+# (outer-row pins: upper layer, bent ~1 mm off the board; inner-row pins: lower layer,
+# bent ~4 mm off). Pushing the module in drops their far legs into the comb's slots (open
+# towards the table), which hold them straight. The legs stick out north of the comb: solder
+# one bare 3V3 wire along them. 10 slots cover all 10 pin columns, so the comb fits even if
+# the module's columns turn out mirrored. Resistor body assumed <= 2.5 x 6.5 mm.
+COMB_Y0, COMB_T = 59.0, 2.0         # comb south face, thickness (y)
+COMB_X   = (24.5, 55.5)             # outer faces of its 2 posts
+COMB_Z   = (4.0, 13.0)              # bar: table face, deck face (4.6 mm gap above for wires)
+R_SLOT_W, R_SLOT_TOP = 1.0, 11.0    # slot width, slot top (z); legs sit at z ~7 and ~10
+POST_W   = 2.5
+PIN_COLS = [MOD_C[0] + (k - 4.5) * 2.54 for k in range(10)]
 
 OUT = os.path.join(os.getcwd(), "board", "case", "models")
 
@@ -157,6 +172,9 @@ def wago_row(cx, n):
     return parts
 for cx, n in WAGO_ROWS:
     walls += wago_row(cx, n)
+walls.append(box(COMB_X[0], COMB_Y0, COMB_Z[0], COMB_X[1] - COMB_X[0], COMB_T, COMB_Z[1] - COMB_Z[0]))
+for x0 in (COMB_X[0], COMB_X[1] - POST_W):        # posts up to the deck arm at y = 56..64
+    walls.append(box(x0, COMB_Y0, COMB_Z[0], POST_W, COMB_T, deck_z - COMB_Z[0]))
 tile = tile.fuse(walls)
 
 cuts = []
@@ -183,6 +201,10 @@ for k in (SIZE / 4, 3 * SIZE / 4):
     for x0 in (-1, SIZE / 2 - RIB / 2 - 1, SIZE - WALL - 1):            # walls/rib along y
         cuts.append(box(x0, k - NOTCH_W / 2, deck_z - NOTCH_H, max(WALL, RIB) + 2, NOTCH_W, NOTCH_H))
 
+# pull-up comb slots, one per module pin column
+for xk in PIN_COLS:
+    cuts.append(box(xk - R_SLOT_W / 2, COMB_Y0 - 1, COMB_Z[0] - 1, R_SLOT_W, COMB_T + 2, R_SLOT_TOP - COMB_Z[0] + 1))
+
 # M3 bolt holes through the perimeter walls, 2 per side, at the square boundaries
 L = WALL + PAD_T + 2
 for k in BOLT_AT:
@@ -198,10 +220,18 @@ os.makedirs(OUT, exist_ok=True)
 tile.exportStep(os.path.join(OUT, "sensor_tile.step"))
 Mesh.Mesh(MeshPart.meshFromShape(Shape=tile, LinearDeflection=0.02, AngularDeflection=0.2)).write(
     os.path.join(OUT, "sensor_tile.stl"))
-# fit-test coupon: one corner square (pocket, slot, walls), ~8 cm3, to check the sensor fit
-coupon = tile.common(Part.makeBox(42, 42, HEIGHT)).removeSplitter()
-coupon.exportStep(os.path.join(OUT, "sensor_tile_coupon.step"))
-Mesh.Mesh(MeshPart.meshFromShape(Shape=coupon, LinearDeflection=0.02, AngularDeflection=0.2)).write(
-    os.path.join(OUT, "sensor_tile_coupon.stl"))
+# test coupons, quick prints before the full tile:
+#   sensor_tile_coupon: one corner square (pocket, slot, walls): sensor fit
+#   sensor_tile_module_coupon: the module clips + pull-up comb: module snap and resistor legs
+#   sensor_tile_wago_coupon: the row of 3 WAGO holders: WAGO snap and lever clearance
+for name, (x0, y0, x1, y1) in (("sensor_tile_coupon", (0, 0, 42, 42)),
+                               ("sensor_tile_module_coupon", (23, 25, 57.5, 66)),
+                               ("sensor_tile_wago_coupon", (86, 113, 154, 127))):
+    c = tile.common(box(x0, y0, 0, x1 - x0, y1 - y0, HEIGHT)).removeSplitter()
+    assert c.isValid() and len(c.Solids) == 1, name
+    c.exportStep(os.path.join(OUT, name + ".step"))
+    Mesh.Mesh(MeshPart.meshFromShape(Shape=c, LinearDeflection=0.02, AngularDeflection=0.2)).write(
+        os.path.join(OUT, name + ".stl"))
+    print("%s: %.1f cm3" % (name, c.Volume / 1000))
 bb = tile.BoundBox
 print("sensor_tile: %.0f x %.0f x %.0f mm, volume %.0f cm3" % (bb.XLength, bb.YLength, bb.ZLength, tile.Volume / 1000))

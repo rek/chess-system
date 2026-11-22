@@ -95,6 +95,16 @@ off-centre a piece still switches.
   arm with a 0.5 mm hook, and two stops that touch the board 1 mm in from its edge. Mount
   it labels-out so you can read the pins; check no part on the deck-facing side sits within
   1 mm of the short edges at the middle.
+- **Pull-up comb**: a slotted bar hanging from the deck just north of the module
+  (y = 59–61). Solder the 16 10 kΩ resistors into the module's input holes from its label
+  side before clipping it in, bodies lying north past its edge in two layers: outer-row pins
+  bent ~1 mm off the board, inner-row pins ~4 mm off (side view on the wiring map). Pushing
+  the module in drops the far legs into the comb's slots, which hold them straight; they
+  stick out north of it, where one bare 3V3 wire is soldered along all 16, with a jumper
+  to the module's VCC. 10 slots cover all 10 pin columns, so it fits even if the module's
+  columns are mirrored. Assumes resistor bodies ≤ 2.5 × 6.5 mm (standard ¼ W).
+- Each sensor wire goes into the same module hole as its resistor, from the deck side. If a
+  hole won't take both, solder the wire to the resistor leg's tail on the deck side instead.
 - Wiring the module: solder wires straight into its holes **before** clipping it in (no
   header pins: header + Dupont plugs would stick ~5 mm out below the tile). Trim the solder
   tails on the deck side short, and use **insulated** wire for the 5V/GND rails, which pass
@@ -110,6 +120,8 @@ off-centre a piece still switches.
   the next tile, one tap into this tile). 5 holders hang below the wire layer on the
   y = 120 band, levers facing down: 5V, GND, 3V3 in the c3–d4 bay, SDA, SCL in the a3–b4
   bay. Each slot has a stop and a 0.5 mm snap lip; if a lip catches an outer lever, trim it.
+  A 221's 3 wire slots are all on one face: turn every WAGO so they face the north wall.
+  Wires heading south pass over the WAGO, between it and the deck.
   Bus IN through the north-wall notch at x = 120, OUT through the east-wall notch at
   y = 120. Those meet the next tile's notches when the 4 tiles are rotated round the board
   centre. The last tile has no OUT, so 2-pin WAGOs do there.
@@ -127,8 +139,12 @@ off-centre a piece still switches.
   double-sided tape or a few dots of glue, lined up so its squares sit over the sensors
   (sensor centres are 20 mm in from each tile edge). The sheet must be non-magnetic
   (wood, MDF, acrylic).
-- Before printing a full tile, print `sensor_tile_coupon` (one corner square, ~10 g) and
-  check a sensor sits snug and flush.
+- Before printing a full tile, print the coupons (~10 g each):
+  - `sensor_tile_coupon`: one corner square. Check a sensor sits snug and flush.
+  - `sensor_tile_module_coupon`: module clips + pull-up comb. Check the module snaps in and
+    a resistor's leg drops into a comb slot.
+  - `sensor_tile_wago_coupon`: the row of 3 WAGO holders. Check a WAGO snaps in and stays put
+    while you open its levers.
 - Print upside down (deck on the bed): flat top, no supports. Turn on elephant-foot
   compensation in the slicer, or the first layers squeeze the pocket openings and the
   sensors won't sit flush.
