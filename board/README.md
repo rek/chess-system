@@ -41,10 +41,13 @@ Testing a single sensor (2026-11-21).
   (3 mm board + ~1 mm inside the sensor package).
 - Result: spreading the magnets **widens** the area that switches, up to the point where
   the centre drops below the trip point.
-  - 2 × 2 grid of 2-high stacks: best gap **3 mm** (centre stays ~47 mT, area ~30 % bigger
-    than touching). A 6 mm gap leaves a dead spot over the centre (~9 mT).
-  - Widest option: 8 single magnets in a touching ring (3 × 3 grid, centre empty),
-    18 × 18 mm footprint: safe radius ~11 mm, centre ~28–38 mT.
+- **Chosen layout: 7 single magnets (not stacked) in a hex "flower"**, 1 in the centre and
+  6 around it at 7.5 mm centre-to-centre (1.5 mm gaps), about 21 mm across. Safe radius
+  ~10.3 mm, centre ~72 mT. Beats every 8-magnet layout tested, with one fewer magnet.
+  32 pieces × 7 = 224 magnets.
+  - Base too small for 21 mm: same flower with magnets touching (18 mm), safe radius ~9.5 mm.
+  - Budget option: 4 singles in a touching 2 × 2 square (14.5 mm), safe radius ~7.8 mm.
+  - Field 22 mm away is tiny and the wrong pole, so the neighbouring square won't trigger.
 - Every magnet must have the same pole facing down (the SS443R switches on one pole
   only). Skip Halbach arrays (too fiddly).
 
