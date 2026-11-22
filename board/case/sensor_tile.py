@@ -1,6 +1,7 @@
 # Sensor holder tile for the board underside (FreeCAD script).
 # Run from the repo root:  freecadcmd board/case/sensor_tile.py
 # Writes board/case/models/sensor_tile.step (+ .stl). Print 4, all identical.
+# Also writes sensor_tile_coupon: one corner square, a quick print to check the sensor fit.
 #
 # One tile = 4 x 4 squares (160 x 160 mm) = 16 SS443R sensors = one MCP23017.
 # Print it upside down (deck on the bed): the deck top comes out flat for the 3 mm sheet,
@@ -78,5 +79,10 @@ os.makedirs(OUT, exist_ok=True)
 tile.exportStep(os.path.join(OUT, "sensor_tile.step"))
 Mesh.Mesh(MeshPart.meshFromShape(Shape=tile, LinearDeflection=0.02, AngularDeflection=0.2)).write(
     os.path.join(OUT, "sensor_tile.stl"))
+# fit-test coupon: one corner square (pocket, slot, walls), ~8 cm3, to check the sensor fit
+coupon = tile.common(Part.makeBox(42, 42, HEIGHT)).removeSplitter()
+coupon.exportStep(os.path.join(OUT, "sensor_tile_coupon.step"))
+Mesh.Mesh(MeshPart.meshFromShape(Shape=coupon, LinearDeflection=0.02, AngularDeflection=0.2)).write(
+    os.path.join(OUT, "sensor_tile_coupon.stl"))
 bb = tile.BoundBox
 print("sensor_tile: %.0f x %.0f x %.0f mm, volume %.0f cm3" % (bb.XLength, bb.YLength, bb.ZLength, tile.Volume / 1000))

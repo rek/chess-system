@@ -88,6 +88,8 @@ off-centre a piece still switches.
   double-sided tape or a few dots of glue, lined up so its squares sit over the sensors
   (sensor centres are 20 mm in from each tile edge). The sheet must be non-magnetic
   (wood, MDF, acrylic).
+- Before printing a full tile, print `sensor_tile_coupon` (one corner square, ~10 g) and
+  check a sensor sits snug and flush.
 - Print upside down (deck on the bed): flat top, no supports. Turn on elephant-foot
   compensation in the slicer, or the first layers squeeze the pocket openings and the
   sensors won't sit flush.
