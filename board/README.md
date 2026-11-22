@@ -36,14 +36,17 @@ Testing a single sensor (2026-11-21).
 - Several magnets side by side (e.g. a dice-5 pattern) behave like a wider magnet with
   gaps: weaker than one solid disc of the same overall width. Every magnet must have the
   same pole facing down, because the SS443R switches on one pole only.
-- Bigger magnets aren't an option, so with 8 × (6 × 3 mm) per piece: **2 × 2 grid of 2-high
-  stacks, touching**, all the same pole down, centred in the base. Acts like one
-  12 × 12 × 6 mm block. Tested 2026-11-22: works well.
-- Spacing (model, `tools/magnet_field.py`): **touching is best**. Spreading the stacks apart
-  never adds reach and leaves a weak spot in the middle. At a 6 mm gap with the sensor 3 mm
-  below, the field over the centre drops to about zero. Field 10 mm off-centre is about the
-  same at any gap. Skip Halbach arrays (need rotated
-  magnets, too fiddly for a piece base).
+- Bigger magnets aren't an option: 8 × (6 × 3 mm) per piece. Model in
+  `tools/magnet_field.py`. It counts where the field is above the SS443R trip point
+  (typ ~13 mT, worst case 20.5 mT), with the Hall chip 4–5 mm below the magnets
+  (3 mm board + ~1 mm inside the sensor package).
+- Result: spreading the magnets **widens** the area that switches, up to the point where
+  the centre drops below the trip point.
+  - 2 × 2 grid of 2-high stacks: best gap **3 mm** (centre stays ~47 mT, area ~30 % bigger
+    than touching). A 6 mm gap leaves a dead spot over the centre (~9 mT).
+  - Widest option: 8 single magnets in a touching ring (3 × 3 grid, centre empty),
+    18 × 18 mm footprint: safe radius ~11 mm, centre ~28–38 mT.
+- Every magnet must have the same pole facing down. Skip Halbach arrays (too fiddly).
 
 ## Open questions
 - What should the board do with a move: show it, log it, send it to an app or a chess site?
