@@ -100,7 +100,14 @@ off-centre a piece still switches.
   tails on the deck side short, and use **insulated** wire for the 5V/GND rails, which pass
   under the module next to those joints.
 - Under the deck: perimeter walls + one cross rib make 4 open bays (20 mm tall) for wiring,
-  the MCP23017 and (on one tile) the Pico. Wire notches at the bottom of every wall/rib.
+  the MCP23017 and (on one tile) the Pico. Wire notches (12 × 8 mm) in every wall/rib,
+  right under the deck, so wires run flat against it.
+- Wire clips: 15 pairs of flexible posts on the solid deck bands, forming 3.6 mm channels
+  with lips (1 mm gap) that hold a pressed-in bundle. They line 3 trunks: x = 40 (a/b
+  columns, rows 3–4, down to the module), x = 120 (c/d columns) and y = 40 (from x = 120
+  through the centre rib to the module). See the wiring map.
+- The module's 16 inputs are all on one long edge (double row); power, I²C and address
+  pins on the other. Fit it inputs-edge towards rows 2–4 (north), so the trunks reach it.
   Electronics live under the board, so no frame is needed.
 - Walls and rib are 1.2 mm (3 lines). Each bolt hole sits on a full-height 8 mm pad that
   makes the wall 2.4 mm there.

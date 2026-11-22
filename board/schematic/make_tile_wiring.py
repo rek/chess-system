@@ -49,68 +49,90 @@ pin_of = {sq: ("GPA%d" % i if i < 8 else "GPB%d" % (i - 8)) for i, sq in enumera
 # Drawn last, on top: it sits below the wires that run under it.
 MX0, MX1, MY0, MY1 = 26.65, 53.35, 29.25, 50.75
 
-# ---- power rails: a spine down the middle of each bay, joined through the notches ----
-for bx in (40, 120):
-    line([(bx - 1.5, 12), (bx - 1.5, 133)], RED, 3)      # 5V spine (through notch (bx, 80))
-    line([(bx + 1.5, 10), (bx + 1.5, 131)], BLK, 3)      # GND spine
-line([(38.5, 44), (118.5, 44)], RED, 3)                  # left-right link through notch (80, 40)
-line([(41.5, 46), (121.5, 46)], BLK, 3)
+# ---- wire clips (same list as sensor_tile.py) ----
+WIRE_CLIPS = ([(40, y, "y") for y in (62, 94, 106, 134)] +
+              [(120, y, "y") for y in (26, 54, 66, 94, 106, 134)] +
+              [(x, 40, "x") for x in (62, 72, 88, 100, 110)])
+def draw_clips():
+    for cx, cy, al in WIRE_CLIPS:
+        for sd in (-1, 1):
+            off = sd * 2.4
+            if al == "y":
+                rect(cx + off - 0.6, cy - 2, cx + off + 0.6, cy + 2, "#7a4b00", "#3a2400")
+            else:
+                rect(cx - 2, cy + off - 0.6, cx + 2, cy + off + 0.6, "#7a4b00", "#3a2400")
+
+# ---- module pins (CJMCU-2317): 16 inputs on the NORTH long edge (double row),
+#      power / I2C / address on the SOUTH long edge. 10 positions at 2.54 mm along x.
+PIN_X = [40 + (k - 4.5) * 2.54 for k in range(10)]   # k = 0 is the VCC/GND end (west)
+def gp_x(sq):                                       # GPAn/GPBn share position k = n + 2
+    i = squares.index(sq); n = i % 8
+    return PIN_X[n + 2] + (0.5 if i >= 8 else -0.5)
+NORTH = 50.75
+
+# ---- power rails: spines in the x = 40 and x = 120 trunks, link along the y = 40 trunk ----
+line([(38.8, 56), (38.8, 133)], RED, 3); line([(41.2, 56), (41.2, 131)], BLK, 3)     # left, north of module
+line([(38.8, 12), (38.8, 27)], RED, 3); line([(41.2, 10), (41.2, 27)], BLK, 3)       # left, a1/b1 row
+line([(118.8, 12), (118.8, 133)], RED, 3); line([(121.2, 10), (121.2, 131)], BLK, 3)  # right
+line([(118.8, 38.8), (56, 38.8)], RED, 3); line([(121.2, 41.2), (56, 41.2)], BLK, 3)  # link west
+line([(56, 38.8), (56, 56), (38.8, 56)], RED, 3); line([(57.5, 41.2), (57.5, 57.5), (41.2, 57.5), (41.2, 56)], BLK, 3)
+line([(24, 27), (38.8, 27)], RED, 2); line([(24, 27), (24, 56), (38.8, 56)], RED, 2)  # left spines joined round the module
+line([(22.5, 27), (41.2, 27)], BLK, 2); line([(22.5, 27), (22.5, 57.5), (41.2, 57.5)], BLK, 2)
 
 # ---- sensors ----
 mcp_entry = {}
 for i, sq in enumerate(squares):
     c, r = i % 4, i // 4
     cx, cy = SQ * (c + 0.5), SQ * (r + 0.5)
-    rect(cx - 2.12, cy - 1.62, cx + 2.12, cy + 1.62, "#333", "#000")           # sensor body (face up, seen from below)
-    ly = cy - 2.4                                                               # legs come down through the slot
+    rect(cx - 2.12, cy - 1.62, cx + 2.12, cy + 1.62, "#333", "#000")
+    ly = cy - 2.4
     legs = {1: cx - 1.27, 2: cx, 3: cx + 1.27}
     for k, lx in legs.items():
         o.append(f'<circle cx="{X(lx):.1f}" cy="{Y(ly):.1f}" r="2.2" fill="{[None, RED, BLK, SIG][k]}" stroke="#000" stroke-width="0.5"/>')
     text(cx, cy + 5, sq, 14, "#000", bold=True)
     bx = 40 if cx < 80 else 120
-    line([(legs[1], ly), (legs[1], ly - 3), (bx - 1.5, ly - 3)], RED, 1.6)    # VS to the 5V spine
-    line([(legs[2], ly), (legs[2], ly - 5), (bx + 1.5, ly - 5)], BLK, 1.6)    # GND to the GND spine
+    line([(legs[1], ly), (legs[1], ly - 3), (bx - 1.2, ly - 3)], RED, 1.6)
+    line([(legs[2], ly), (legs[2], ly - 5), (bx + 1.2, ly - 5)], BLK, 1.6)
     sy = ly - 7 - 0.8 * c
     line([(legs[3], ly), (legs[3], sy)], SIG, 1.4)
     mcp_entry[sq] = (legs[3], sy, cx, cy)
 
-# ---- signals: one wire per sensor to the MCP23017, crossing ribs only at the notches ----
-top_k = right_k = 0
+# ---- signals: along the trunks (through the clips), then a short hop to the module's north edge ----
 for sq, (lx, sy, cx, cy) in mcp_entry.items():
-    if cx < 80 and cy < 40:                      # a1, b1: below the module, land on its bottom edge
-        tx = MX1 - 4 + 2 * (cx > 40)
-        pts = [(lx, sy), (tx, sy), (tx, MY0)]
-    elif cx < 80 and cy < 80:                    # a2, b2: land on the top edge
-        tx = MX0 + 3 + 2 * top_k; top_k += 1
-        pts = [(lx, sy), (tx, sy), (tx, MY1)]
-    elif cx < 80:                                # a3-b4: through notch (40, 80), x 43-46
-        nx = 43 + 0.8 * top_k
-        tx = MX0 + 3 + 2 * top_k; top_k += 1
-        pts = [(lx, sy), (nx, sy), (nx, MY1 + 6 - 0.8 * top_k), (tx, MY1 + 6 - 0.8 * top_k), (tx, MY1)]
-    else:                                        # right half: through notch (80, 40), y 34-40
-        k = right_k; right_k += 1
-        cyx = 35 + 0.6 * k                       # crossing height at the rib
-        ty = MY0 + 1.2 + 1.1 * k                 # landing on the module's right edge
-        cx_col = 84 + 0.8 * k
-        if cy < 80:
-            pts = [(lx, sy), (cx_col, sy), (cx_col, cyx), (73 - 0.3 * k, cyx), (73 - 0.3 * k, ty), (MX1, ty)]
-        else:                                    # far bay: first through notch (120, 80), x 123-126
-            nx = 123 + 0.4 * (k - 4)
-            pts = [(lx, sy), (nx, sy), (nx, 70 - 0.8 * k), (cx_col, 70 - 0.8 * k), (cx_col, cyx), (73 - 0.3 * k, cyx), (73 - 0.3 * k, ty), (MX1, ty)]
+    i = squares.index(sq); tx = gp_x(sq)
+    if cy < 40:                                   # a1, b1: round the module's side, up to the north edge
+        side = 20 if cx < 40 else 60
+        pts = [(lx, sy), (side, sy), (side, NORTH + 3 + 0.5 * i), (tx, NORTH + 3 + 0.5 * i), (tx, NORTH)]
+    elif cx < 80 and cy < 80:                     # a2, b2: straight down onto the north edge
+        pts = [(lx, sy), (tx, sy), (tx, NORTH)]
+    elif cx < 80:                                 # a3-b4: into the x = 40 trunk, south to the module
+        tr = 40 + (-0.6 if cx < 40 else 0.6) + 0.25 * (r := i // 4)
+        pts = [(lx, sy), (tr, sy), (tr, NORTH + 4 + 0.4 * (i % 8)), (tx, NORTH + 4 + 0.4 * (i % 8)), (tx, NORTH)]
+    else:                                         # c/d columns: x = 120 trunk, west along y = 40, hop north
+        k = (i // 4) * 2 + (i % 4 - 2)            # 0..7
+        tr = 119.2 + 0.25 * k
+        ty = 39.0 + 0.25 * k
+        pts = [(lx, sy), (tr, sy), (tr, ty), (60 + 0.4 * k, ty), (60 + 0.4 * k, NORTH + 1.5 + 0.3 * k), (tx, NORTH + 1.5 + 0.3 * k), (tx, NORTH)]
     line(pts, SIG, 1.2)
 
-# module on top, with its two snap clips
+# module on top, with its two snap clips, and the wire clips
+draw_clips()
 rect(MX0, MY0, MX1, MY1, "#cfe8ff", "#1f77b4", 2)
+for k, xk in enumerate(PIN_X):                     # pin rows
+    for yy in (NORTH - 1.3, NORTH - 3.84, MY0 + 1.3):
+        o.append(f'<circle cx="{X(xk):.1f}" cy="{Y(yy):.1f}" r="1.6" fill="white" stroke="#1f77b4" stroke-width="0.6"/>')
 for xe in (MX0 - 0.6, MX1 + 0.6):
     rect(xe - 0.6, 38.5, xe + 0.6, 41.5, "#555", "#000")
-text(40, 41.5, "MCP23017", 12, "#1f77b4", bold=True); text(40, 37.5, "CJMCU-2317  0x20", 9, "#1f77b4")
-text(40, 33.5, "labels face you", 9, "#1f77b4")
+text(40, 42.5, "MCP23017", 12, "#1f77b4", bold=True); text(40, 38.5, "CJMCU-2317  0x20", 9, "#1f77b4")
+text(40, 34.5, "inputs: north edge  power/I2C: south", 8, "#1f77b4")
 
 # ---- bus in: through the outer-wall notch at (40, 0) ----
 line([(38.5, -8), (38.5, 12)], RED, 3); line([(41.5, -8), (41.5, 10)], BLK, 3)
-line([(43.5, -8), (43.5, 4), (48, 4), (48, MY0)], ORG, 2.2)
-line([(44.5, -8), (44.5, 3), (50.5, 3), (50.5, MY0)], BLU, 2.2)
-line([(45.5, -8), (45.5, 2), (53, 2), (53, MY0)], GRN, 2.2)
+# south edge single row, from the west end: A2 A1 A0 RESET SO CS SDA SCL GND VCC
+# (it runs the opposite way to the north row, whose west end is VCC/GND, as on the module)
+line([(43.5, -8), (43.5, 4), (PIN_X[9], 4), (PIN_X[9], MY0)], ORG, 2.2)     # VCC (+ RESET, 3V3)
+line([(44.5, -8), (44.5, 6), (PIN_X[6], 6), (PIN_X[6], MY0)], BLU, 2.2)     # SDA
+line([(45.5, -8), (45.5, 8), (PIN_X[7], 8), (PIN_X[7], MY0)], GRN, 2.2)     # SCL
 text(41, -11, "BUS to Pico / next tile: 5V, GND, 3V3, SDA, SCL", 12, "#000", bold=True)
 
 # ---- legend and notes (right column) ----
@@ -139,8 +161,10 @@ notes = ["Rails: + and GND run down the middle of each bay",
          "and pass between bays through the notches.",
          "Signals: one wire per sensor to the MCP23017",
          "(ribbon cable works well, 4 wires per bay).",
-         "MCP23017 snaps into 2 clips (dark marks), 5 mm",
-         "below the deck; wires can run under it.",
+         "MCP23017 snaps into 2 clips (grey marks), 5 mm",
+         "below the deck. Inputs on its north edge.",
+         "Brown pairs = wire clips: press the bundle in.",
+         "Trunks: x=40, x=120 and y=40, through the notches.",
          "Pull-ups: 10k from each signal to 3V3, at the MCP end.",
          "Also: 100 nF across MCP VCC/GND, 10 uF across 5V/GND.",
          "Check each sensor's legs for shorts before power."]

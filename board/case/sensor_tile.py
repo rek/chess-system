@@ -13,7 +13,8 @@
 #     the MCP23017 module and (on one tile) the Pico
 #   wall holes (on 2.4 mm pads, at 20/140 mm): M3 bolts join neighbouring tiles (same holes on all 4 sides, so the tile
 #     works in any corner, rotated)
-#   notches at the bottom of walls and ribs: wires pass between bays and tiles
+#   notches at the deck side of walls and ribs: wires pass between bays and tiles
+#   wire clips along 3 trunk routes (see WIRE_CLIPS) hold the wiring against the deck
 #   two snap clips in the a1-b2 bay hold the MCP23017 module (CJMCU-2317)
 import os
 import FreeCAD as App, Part, Mesh, MeshPart
@@ -40,7 +41,17 @@ BAND     = 3.0            # solid band along each square edge (6 mm where two sq
 BOLT_D   = 3.4            # M3 clearance
 BOLT_Z   = 10.0           # bolt height above the bottom edge
 BOLT_AT  = (SQUARE / 2, SIZE - SQUARE / 2)   # 20 and 140 mm along each side, clear of the notches
-NOTCH_W, NOTCH_H = 12.0, 8.0   # wire notch at the bottom of walls/ribs
+NOTCH_W, NOTCH_H = 12.0, 8.0   # wire notch in walls/ribs, right under the deck (12 mm bridge in print)
+
+# Wire clips: pairs of flexible posts hanging from the deck, forming a channel the wires
+# press into. They sit on the solid deck bands along square edges, on 3 trunks:
+#   x = 40 (a/b columns, rows 3-4, down to the module), x = 120 (c/d columns, through the
+#   y = 80 rib), y = 40 (from x = 120 through the x = 80 rib towards the module).
+CLIP_G, CLIP_PW, CLIP_L, CLIP_H = 3.6, 1.2, 4.0, 9.0   # channel width, post thickness, length, depth
+CLIP_LIP = 1.3                                          # lips leave a 1.0 mm gap: wires snap past
+WIRE_CLIPS = ([(40, y, "y") for y in (62, 94, 106, 134)] +
+              [(120, y, "y") for y in (26, 54, 66, 94, 106, 134)] +
+              [(x, 40, "x") for x in (62, 72, 88, 100, 110)])
 
 # MCP23017 module (CJMCU-2317, 26.7 x 21.5 mm, no mounting holes) snaps in under the deck,
 # centred in the a1-b2 bay, long side along x. Pins run along both long edges, so it is held
@@ -87,6 +98,31 @@ for side in (-1, 1):
     sx0 = xe - STOP_IN - 0.15 if side > 0 else xe
     for y0 in (MOD_C[1] - ARM_W / 2 - 0.3 - 1.4, MOD_C[1] + ARM_W / 2 + 0.3):
         walls.append(box(sx0, y0, deck_z - MOD_GAP, STOP_IN + 0.15, 1.4, MOD_GAP))
+def wire_clip(cx, cy, along):
+    """Two posts either side of a channel running along `along`, lips at the free end."""
+    parts = []
+    zt = deck_z - CLIP_H
+    for side in (-1, 1):
+        off = side * (CLIP_G / 2 + CLIP_PW / 2)       # post centre, across the channel
+        # post
+        if along == "y":
+            parts.append(box(cx + off - CLIP_PW / 2, cy - CLIP_L / 2, zt, CLIP_PW, CLIP_L, CLIP_H))
+        else:
+            parts.append(box(cx - CLIP_L / 2, cy + off - CLIP_PW / 2, zt, CLIP_L, CLIP_PW, CLIP_H))
+        # lip: triangle in the cross-section, flat side up (holds wires), sloped side down
+        inner = side * CLIP_G / 2                     # inner face of this post
+        tip = inner - side * CLIP_LIP
+        if along == "y":
+            pts = [V(cx + inner, cy - CLIP_L / 2, zt + 1.6), V(cx + tip, cy - CLIP_L / 2, zt + 1.6),
+                   V(cx + inner, cy - CLIP_L / 2, zt), V(cx + inner, cy - CLIP_L / 2, zt + 1.6)]
+            parts.append(Part.Face(Part.makePolygon(pts)).extrude(V(0, CLIP_L, 0)))
+        else:
+            pts = [V(cx - CLIP_L / 2, cy + inner, zt + 1.6), V(cx - CLIP_L / 2, cy + tip, zt + 1.6),
+                   V(cx - CLIP_L / 2, cy + inner, zt), V(cx - CLIP_L / 2, cy + inner, zt + 1.6)]
+            parts.append(Part.Face(Part.makePolygon(pts)).extrude(V(CLIP_L, 0, 0)))
+    return parts
+for cx, cy, along in WIRE_CLIPS:
+    walls += wire_clip(cx, cy, along)
 tile = tile.fuse(walls)
 
 cuts = []
@@ -109,9 +145,9 @@ for i in range(N):
 # wire notches: middle of each wall/rib segment (one per bay side)
 for k in (SIZE / 4, 3 * SIZE / 4):
     for y0 in (-1, SIZE / 2 - RIB / 2 - 1, SIZE - WALL - 1):            # walls/rib along x
-        cuts.append(box(k - NOTCH_W / 2, y0, -1, NOTCH_W, max(WALL, RIB) + 2, NOTCH_H + 1))
+        cuts.append(box(k - NOTCH_W / 2, y0, deck_z - NOTCH_H, NOTCH_W, max(WALL, RIB) + 2, NOTCH_H))
     for x0 in (-1, SIZE / 2 - RIB / 2 - 1, SIZE - WALL - 1):            # walls/rib along y
-        cuts.append(box(x0, k - NOTCH_W / 2, -1, max(WALL, RIB) + 2, NOTCH_W, NOTCH_H + 1))
+        cuts.append(box(x0, k - NOTCH_W / 2, deck_z - NOTCH_H, max(WALL, RIB) + 2, NOTCH_W, NOTCH_H))
 
 # M3 bolt holes through the perimeter walls, 2 per side, at the square boundaries
 L = WALL + PAD_T + 2
