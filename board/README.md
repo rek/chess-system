@@ -38,7 +38,11 @@ Testing a single sensor (2026-11-21).
   same pole facing down, because the SS443R switches on one pole only.
 - Bigger magnets aren't an option, so with 8 × (6 × 3 mm) per piece: **2 × 2 grid of 2-high
   stacks, touching**, all the same pole down, centred in the base. Acts like one
-  12 × 12 × 6 mm block. Tested 2026-11-22: works well. Skip Halbach arrays (need rotated
+  12 × 12 × 6 mm block. Tested 2026-11-22: works well.
+- Spacing (model, `tools/magnet_field.py`): **touching is best**. Spreading the stacks apart
+  never adds reach and leaves a weak spot in the middle. At a 6 mm gap with the sensor 3 mm
+  below, the field over the centre drops to about zero. Field 10 mm off-centre is about the
+  same at any gap. Skip Halbach arrays (need rotated
   magnets, too fiddly for a piece base).
 
 ## Open questions
