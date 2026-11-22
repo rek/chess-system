@@ -33,7 +33,7 @@ Build: 64-square Hall-effect chessboard. LEDs are not included in this build.
 
 | Qty | Part | Notes | Status |
 |---:|---|---|---|
-| 4 | Sensor tile, 160 × 160 × 20 mm (`case/sensor_tile.py`) | ~106 cm³ (~130 g PLA) each | To print |
+| 4 | Sensor tile, 160 × 160 × 20 mm (`case/sensor_tile.py`) | ~66 cm³ (~80 g PLA) each | To print |
 | 1 | Top sheet, 3 mm, single piece, ≥ 320 × 320 mm, non-magnetic | Pieces play on this | Check |
 | 8 | M3 × 10 bolt + nut | Join the tiles: 2 per shared edge | To buy |
 

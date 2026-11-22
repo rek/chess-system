@@ -76,7 +76,9 @@ off-centre a piece still switches.
   holder is **4 identical tiles of 4 × 4 squares (160 × 160 × 20 mm)**.
 - One tile = 16 sensors = one MCP23017, mounted in the tile's bays. Only the bus crosses
   between tiles: 5V, 3V3, GND, SDA, SCL.
-- Deck 3 mm with a pocket at every square centre (4.4 × 3.4 mm for the 4.1 × 3.1 × 1.6 mm
+- Deck 2.4 mm, a lattice rather than a solid plate: each square keeps a cross of 8 mm arms
+  through its sensor and a 3 mm band along its edges, with 4 windows cut out (saves ~40 %
+  plastic; the 3 mm sheet spans the windows). A pocket at every square centre (4.4 × 3.4 mm for the 4.1 × 3.1 × 1.6 mm
   sensor, 0.15 mm clearance per side). Sensor lies face up, flush with the deck top, so it
   touches the underside of the 3 mm top sheet. Leads bend straight down through a slot
   on the pocket's -y side.

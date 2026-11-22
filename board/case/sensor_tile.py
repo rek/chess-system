@@ -7,7 +7,7 @@
 # Print it upside down (deck on the bed): the deck top comes out flat for the 3 mm sheet,
 # and nothing needs supports.
 #
-#   deck (3 mm) with a pocket at every square centre: sensor face up, flush with the top
+#   deck (2.4 mm) with a pocket at every square centre: sensor face up, flush with the top
 #   lead slot beside each pocket: bend the 3 leads straight down through it
 #   perimeter walls + one cross rib, 20 mm deep: 4 open bays underneath for wiring,
 #     the MCP23017 module and (on one tile) the Pico
@@ -22,13 +22,18 @@ SQUARE   = 40.0           # chess square
 N        = 4              # squares per side per tile
 SIZE     = SQUARE * N     # 160 mm
 HEIGHT   = 20.0           # total tile height (deck + bays)
-DECK     = 3.0            # deck thickness
+DECK     = 2.4            # deck thickness (1.6 mm pocket + 0.8 mm floor)
 WALL     = 2.0            # perimeter wall (two tiles side by side = 4 mm)
 RIB      = 2.0            # cross rib at the tile centre lines
 
 SENSOR_W, SENSOR_H, SENSOR_T = 4.1, 3.1, 1.6   # measured body: width, height (lead axis), thickness
 CLEAR    = 0.15           # per side, snug fit
 SLOT_W, SLOT_D = SENSOR_W + 2 * CLEAR, 1.5     # lead slot, beside the lead edge of the pocket
+# Deck windows: the deck is a lattice, not a solid plate (it was ~70 % of the plastic).
+# Each square keeps a cross of arms through the sensor and a band along its edges;
+# 4 windows per square are cut out. The 3 mm sheet on top spans the windows easily.
+ARM      = 8.0            # width of the cross arms through the sensor
+BAND     = 3.0            # solid band along each square edge (6 mm where two squares meet)
 
 BOLT_D   = 3.4            # M3 clearance
 BOLT_Z   = 10.0           # bolt height above the bottom edge
@@ -57,6 +62,13 @@ for i in range(N):
         cuts.append(box(cx - pw / 2, cy - ph / 2, HEIGHT - SENSOR_T, pw, ph, SENSOR_T + 1))
         # lead slot right below the pocket's lead edge (-y side), through the deck
         cuts.append(box(cx - SLOT_W / 2, cy - ph / 2 - SLOT_D + 0.01, deck_z - 1, SLOT_W, SLOT_D, DECK + 2))
+        # 4 deck windows around the cross
+        win = SQUARE / 2 - ARM / 2 - BAND
+        for sx in (-1, 1):
+            for sy in (-1, 1):
+                x0 = cx + ARM / 2 if sx > 0 else cx - ARM / 2 - win
+                y0 = cy + ARM / 2 if sy > 0 else cy - ARM / 2 - win
+                cuts.append(box(x0, y0, deck_z - 1, win, win, DECK + 2))
 
 # wire notches: middle of each wall/rib segment (one per bay side)
 for k in (SIZE / 4, 3 * SIZE / 4):
